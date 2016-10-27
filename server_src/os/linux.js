@@ -1,6 +1,20 @@
 ( function( e ) {
 
     var fs = require( './fs.js' );
+    var net = require( './network.js' );
+    
+    e.add_interface = function( system, name ) {
+        
+        if ( system.network_interfaces[name] )
+            throw new Error( "Interface with this name already exists: " + name );
+        
+        var int = net.create_interface( system, name );
+        
+        system.network_interfaces[name] = int;
+        
+        return int;
+        
+    };
 
     e.boot = function( system ) {
 
@@ -14,10 +28,10 @@
 
             is_on: false,
 
-            fs: fs.create_fs( fs.TYPES.MANAGED ),
+            fs: fs.inodes.create_fs( fs.TYPES.MANAGED ),
 
             installed_programs: [],
-
+            network_interfaces: {},
             process_list: [],
             next_pid: 1,
 
@@ -27,10 +41,10 @@
 
     e.install = function( system, program ) {
 
-        if ( system.installed_programs.indexOf( program ) >= 0 )
+        if ( system.installed_programs[program.CMD] )
             return false;
 
-        system.installed_programs.push( program );
+        system.installed_programs[program.CMD] = program;
 
         if ( program.on_install )
             program.on_install( system );

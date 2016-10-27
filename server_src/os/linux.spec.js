@@ -1,6 +1,7 @@
 describe( "Linux OS functions", function() {
 
-    var linux = require( './linux.js' );
+    var linux = require( './linux.js' ),
+        net = require( './network.js' );
 
     describe( "create_system", function() {
 
@@ -71,7 +72,8 @@ describe( "Linux OS functions", function() {
             this.system = linux.create_system();
 
             this.program = {
-
+                
+                CMD: 'test',
                 on_install: function() {}
 
             }; 
@@ -82,16 +84,11 @@ describe( "Linux OS functions", function() {
 
             linux.install( this.system, this.program );
 
-            expect( this.system.installed_programs ).toContain( this.program );
-            expect( this.system.installed_programs.length ).toEqual( 1 );
-
-            linux.install( this.system, this.program );
-
-            expect( this.system.installed_programs.length ).toEqual( 1 );
+            expect( this.system.installed_programs[this.program.CMD] ).toEqual( this.program );
 
         } );
 
-        it( "should return the install script on installation, if it is not yet installed", function() {
+        it( "should run the install script on installation, if it is not yet installed", function() {
 
             spyOn( this.program, 'on_install' );
 
@@ -233,6 +230,36 @@ describe( "Linux OS functions", function() {
 
         } );
 
+    } );
+    
+    describe( "add_interface", function() {
+
+        beforeEach( function() {
+
+            this.system = linux.create_system();
+            this.int = net.create_interface();
+
+        } );
+        
+        it( "should add an interface to the systems network interfaces", function() {
+            
+            var int = linux.add_interface( this.system, 'eth0' );
+            
+            expect( this.system.network_interfaces['eth0'] ).toEqual( int );
+            expect( int.system ).toEqual( this.system );
+            
+        } );
+        
+        it( "should raise an error if the given interface name is already taken", function() {
+            
+            linux.add_interface( this.system, 'eth0' );
+            
+            expect( function() {
+                linux.add_interface( this.system, 'eth0' );
+            }.bind( this ) ).toThrowError( "Interface with this name already exists: eth0" );
+            
+        } );
+        
     } );
 
 } );
