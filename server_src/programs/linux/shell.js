@@ -8,37 +8,63 @@
 
     e.on_command_input = function( system, proc, command ) {
     
-        var command = e.parse_command( command ),
-            ret;
-    
-        if ( command.length <= 0 )
-            ret = 1;
-    
-        else if ( e.builtin[command[0]] )
-            ret = e.builtin[command[0]]( system, proc, command );
+        var command = e.parse_command( command );
         
-        else if ( e.installed_programs[command[0]] )
-            var p = linux.run( system, e.installed_programs[command[0]], proc.inf, proc.outf, proc.errf, command );
-    
-        e.print_prompt( system, proc );
+        if ( command.length <= 0 ) {
 
-        return ret;
+            e.print_prompt( system, proc );
+            return 1;
+        }
+    
+        else if ( e.builtin[command[0]] ) {
+
+            var ret = e.builtin[command[0]]( system, proc, command );
+            e.print_prompt( system, proc );
+
+            return ret;
+        }
+
+        else if ( system.installed_programs[command[0]] ) {
+
+            proc.inf.removeListener( 'data', proc.params.read_callback );
+            proc.is_running = false;
+
+            var p = linux.run( system, system.installed_programs[command[0]], proc.inf, proc.outf, proc.errf, command, function() {
+
+                proc.inf.on( 'data', proc.params.read_callback );
+                proc.is_running = true;
+                e.print_prompt( system, proc );
+
+            } );
+        } 
+        
+        else {
+
+            proc.outf.write( "shell: " + command[0] + ": command not found\n" );
+            e.print_prompt( system, proc );
+            return ret;
+        
+        }
     
     };
     
-    e.on_startup = function( system, proc, args ) {
+    e.on_startup = function( system, proc, args, exit_callback ) {
     
         proc.env_vars = {
             PWD: '/',
         };
+
+        proc.params = {
+            exit_callback: exit_callback,
+            read_callback: function( d ) {
+                e.on_command_input( system, proc, d.toString() );
+            },
+
+        };
     
         e.print_prompt( system, proc );
         
-        proc.inf.on( 'data', function( d ) {
-    
-            e.on_command_input( system, proc, d.toString() );
-    
-        } );
+        proc.inf.on( 'data', proc.params.read_callback );
     
     };
     
@@ -65,6 +91,7 @@
         proc.outf.write( '$ ' );
     
     };
+
     
     
     
@@ -101,6 +128,16 @@
             }
 
             proc.env_vars.PWD = abs_dir;
+            return 0;
+
+        },
+
+        exit: function( system, proc, args ) {
+
+            proc.inf.removeListener( 'data', proc.params.read_callback );
+
+            linux.quit( system, proc.pid, proc.params.exit_callback );
+
             return 0;
 
         },

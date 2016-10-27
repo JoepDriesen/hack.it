@@ -29,11 +29,16 @@ describe( "The linux shell program", function() {
         beforeEach( function() {
 
             this.proc = {
-                inf: {},
+                inf: {
+                    removeListener: function() {},
+                },
                 outf: {
                     write: function() {},
                 },
                 errf: {},
+                params: {
+                    read_callback: function() {},
+                },
             };
 
         } );
@@ -46,32 +51,34 @@ describe( "The linux shell program", function() {
 
         it( "should execute the builtin function for the given command if it is available", function() {
             
-            shell.builtin.test = function() {};
-            spyOn( shell.builtin, 'test' );
+            shell.builtin.test_unique001 = function() {};
+            spyOn( shell.builtin, 'test_unique001' );
 
-            shell.on_command_input( null, this.proc, "test 1 2" );
+            shell.on_command_input( null, this.proc, "test_unique001 1 2" );
 
-            expect( shell.builtin.test ).toHaveBeenCalledWith( null, this.proc, [ "test", "1", "2" ] );
+            expect( shell.builtin.test_unique001 ).toHaveBeenCalledWith( null, this.proc, [ "test_unique001", "1", "2" ] );
 
         } );
 
-        it( "should execute the installed program corresponding  to the given command", function() {
+        it( "should execute the installed program corresponding to the given command", function() {
             
             var prog = {
                     CMD: 'test',
                     on_startup: function() {},
                 },
                 sys = {
+                    is_on: true,
                     installed_programs: {
                         test: prog,
-                    }
+                    },
+                    process_list: [],
                 };
             
             spyOn( prog, 'on_startup' );
 
             shell.on_command_input( sys, this.proc, "test 1 2" );
 
-            expect( prog.on_startup ).toHaveBeenCalledWith( sys, this.proc, [ "test", "1", "2" ] );
+            expect( prog.on_startup ).toHaveBeenCalled();
 
         } );
 

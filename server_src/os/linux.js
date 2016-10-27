@@ -53,11 +53,12 @@
 
     };
 
-    e.quit = function( system, pid ) {
+    e.quit = function( system, pid, exit_callback ) {
 
-        for ( var i = 0; i < system.process_list.length; i++ ) {
-
-            var p = system.process_list[i];
+        var i, p;
+        for ( i = 0; i < system.process_list.length; i++ ) {
+            
+            p = system.process_list[i];
 
             if ( p.pid < pid )
                 continue;
@@ -65,7 +66,18 @@
             if ( p.pid > pid )
                 return false;
 
-            delete system.process_list[i];
+            break;
+
+        }
+
+        if ( p.pid == pid ) {
+
+            system.process_list.splice( i, 1 );
+            p.is_running = false;
+
+            if ( exit_callback )
+                exit_callback();
+
             return p;
 
         }
@@ -74,13 +86,14 @@
 
     };
 
-    e.run = function( system, program, inf, outf, errf, args ) {
+    e.run = function( system, program, inf, outf, errf, args, exit_callback ) {
 
         if ( !system.is_on )
             throw new Error( "System is not booted" );
 
         var p = {
             pid: system.next_pid,
+            is_running: true,
             program: program,
 
             inf: inf,
@@ -92,7 +105,7 @@
         system.next_pid++;
 
         if ( program.on_startup )
-            program.on_startup( system, p, args );
+            program.on_startup( system, p, args, exit_callback );
 
         return p;
 

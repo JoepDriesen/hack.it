@@ -47,7 +47,7 @@
             var i = network.hosts.indexOf( interface );
 
             if ( i )
-                delete network.hosts[i];
+                network.hosts.splice( i, 1 );
 
         }
         
@@ -70,6 +70,9 @@
             throw new Error( "The given default gateway IP address is not in the given subnet: " + default_gateway + " not in " + subnet_cidr );
         
         interface.network.arp_table[ip_addr] = interface;
+        interface.ip = ip_addr;
+        interface.subnet = subnet;
+        interface.default_gateway = default_gateway;
         
     };
     

@@ -199,10 +199,10 @@
         
         remove_child_inode: function( name, parent_inode ) {
             
-            if ( !parent_inode[name] )
+            if ( !parent_inode.child_inodes[name] )
                 throw new Error( "File or directory does not exist: " + name );
             
-            delete parent_inode[name];
+            delete parent_inode.child_inodes[name];
             
         },
  

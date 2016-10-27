@@ -1,6 +1,7 @@
 describe( "A network", function() {
     
-    var net = require( './network.js' );
+    var net = require( './network.js' ),
+        ip = require( 'ip' );
     
     describe( "connect", function() {
         
@@ -110,6 +111,16 @@ describe( "A network", function() {
                 net.interface_up_static( this.int, '192.168.0.1', '192.168.0.0/24', '1.1.1.1' );
             }.bind( this ) ).toThrowError( "The given default gateway IP address is not in the given subnet: 1.1.1.1 not in 192.168.0.0/24" );
             
+        } );
+
+        it( "should configure the interface if the command is successful", function() {
+
+            net.interface_up_static( this.int, '192.168.0.1', '192.168.0.0/24', '192.168.0.1' );
+
+            expect( this.int.ip ).toEqual( '192.168.0.1' );
+            expect( this.int.subnet.networkAddress ).toEqual( '192.168.0.0' );
+            expect( this.int.default_gateway ).toEqual( '192.168.0.1' );
+
         } );
         
     } );

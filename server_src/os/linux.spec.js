@@ -169,7 +169,7 @@ describe( "Linux OS functions", function() {
 
             var p = linux.run( this.system, this.program, inf, outf, errf );
 
-            expect( this.program.on_startup ).toHaveBeenCalledWith( this.system, p, undefined );
+            expect( this.program.on_startup ).toHaveBeenCalledWith( this.system, p, undefined, undefined );
             expect( p.inf ).toEqual( inf );
             expect( p.outf ).toEqual( outf );
             expect( p.errf ).toEqual( errf );
@@ -184,10 +184,11 @@ describe( "Linux OS functions", function() {
                 args = [ "1", "2" ];
 
             spyOn( this.program, 'on_startup' );
+            var exit_callback = function() {};
 
-            var p = linux.run( this.system, this.program, inf, outf, errf, args );
+            var p = linux.run( this.system, this.program, inf, outf, errf, args, exit_callback );
 
-            expect( this.program.on_startup ).toHaveBeenCalledWith( this.system, p, args );
+            expect( this.program.on_startup ).toHaveBeenCalledWith( this.system, p, args, exit_callback );
 
         } );
 
@@ -227,6 +228,17 @@ describe( "Linux OS functions", function() {
         it( "should return false if the process id was not found.", function() {
 
             expect( linux.quit( this.system, 1000 ) ).toBeFalsy();
+
+        } );
+
+        it( "should call the given callback", function() {
+
+            this.exit = function() {};
+            spyOn( this, 'exit' );
+
+            linux.quit( this.system, this.process.pid, this.exit );
+
+            expect( this.exit ).toHaveBeenCalledWith();
 
         } );
 
