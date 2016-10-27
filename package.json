@@ -1,0 +1,24 @@
+{
+  "name": "hack.it",
+  "version": "0.0.1",
+  "description": "Javascript hacking simulator - teaching myself JS TDD",
+  "main": "server_src/server.js",
+  "scripts": {
+    "test": "jasmine"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JoepDriesen/hack.it.git"
+  },
+  "author": "Joep Driesen",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/JoepDriesen/hack.it/issues"
+  },
+  "homepage": "https://github.com/JoepDriesen/hack.it#readme",
+  "dependencies": {
+    "jasmine": "^2.5.2",
+    "mainloop.js": "^1.0.3"
+  },
+  "devDependencies": {}
+}
