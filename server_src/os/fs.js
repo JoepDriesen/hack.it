@@ -1,35 +1,79 @@
 ( function( e ) {
 
-    e.mkdir = function( name, parent_dir, mode ) {
+    e.TYPES = {
+        GENERATED: 0,
+        MANAGED: 1,
+    }
 
-        var inode = {
-            child_inodes: []
+    e.abspath = function( basepath, relpath ) {
+
+    };
+
+    e.create_fs = function( type ) {
+
+        return {
+            type: type,
+
+            sep: '/',
+            drive: '',
+
+            root: {
+                parent_inode: null,
+                child_inodes: [],
+            }
         };
+    };
 
-        if ( parent_dir )
-            parent_dir.child_inodes.push( inode );
+    e.exists = function( fs, abspath ) {
 
-        return inode;
+        
 
     };
 
-    e.listdir = function( dir_inode ) {
-
-        return dir_inode.child_inodes;
+    e.is_dir = function( fs, abspath ) {
 
     };
 
-    e.rmdir = function( dir_inode, parent_dir ) {
-
-        var i = parent_dir.child_inodes.indexOf( dir_inode );
-
-        if ( i < 0 )
-            return false;
-
-        delete parent_dir.child_inodes[i];
-
-        return true;
+    e.is_file = function( fs, abspath ) {
 
     };
 
-}( exports ) );
+    e.is_link = function( fs, abspath ) {
+
+    };
+
+    e.join = function( basepath, relpath ) {
+
+    };
+
+    e.normpath = function( path ) {
+
+    };
+
+    e.split = function( fs, path ) {
+
+        for ( var i = path.length; i >= 0; i-- ) {
+
+            if ( path[i] == fs.sep ) {
+
+                if ( i == 0 )
+                    return [fs.sep, path.slice( i+1 )]
+
+                return [path.slice( 0, i ), path.slice( i+1 )];
+
+            }
+
+        }
+
+        return ['', path];
+
+    };
+
+    e.splitall = function( fs, path ) {
+
+        var parts = path.split( fs.sep );
+
+    };
+
+
+}( module.exports ) );

@@ -164,11 +164,33 @@ describe( "Linux OS functions", function() {
 
         it( "should run the startup script when a program is started.", function() {
 
+            var inf = {},
+                outf = {},
+                errf = {};
+
             spyOn( this.program, 'on_startup' );
 
-            linux.run( this.system, this.program );
+            var p = linux.run( this.system, this.program, inf, outf, errf );
 
-            expect( this.program.on_startup ).toHaveBeenCalledWith( this.system );
+            expect( this.program.on_startup ).toHaveBeenCalledWith( this.system, p, undefined );
+            expect( p.inf ).toEqual( inf );
+            expect( p.outf ).toEqual( outf );
+            expect( p.errf ).toEqual( errf );
+
+        } );
+
+        it( "should pass the arguments for the program to the startup script.", function() {
+
+            var inf = {},
+                outf = {},
+                errf = {},
+                args = [ "1", "2" ];
+
+            spyOn( this.program, 'on_startup' );
+
+            var p = linux.run( this.system, this.program, inf, outf, errf, args );
+
+            expect( this.program.on_startup ).toHaveBeenCalledWith( this.system, p, args );
 
         } );
 
@@ -190,7 +212,7 @@ describe( "Linux OS functions", function() {
 
         it( "should remove a process from the process list", function() {
 
-            linux.quit( this.system, this.process.pid );
+            expect( linux.quit( this.system, this.process.pid ) ).toEqual( this.process );
 
             expect( this.system.process_list ).not.toContain( this.process );
 
@@ -205,11 +227,9 @@ describe( "Linux OS functions", function() {
 
         } );
 
-        it( "should raise an error if the process id was not found.", function() {
+        it( "should return false if the process id was not found.", function() {
 
-            expect( function() {
-                linux.quit( this.system, 1000 );
-            } ).toThrowError( "Process id not found: 1000" );
+            expect( linux.quit( this.system, 1000 ) ).toBeFalsy();
 
         } );
 

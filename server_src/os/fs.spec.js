@@ -2,7 +2,30 @@ describe( "Filesystem functions", function() {
 
     var fs = require( './fs.js' );
 
-    describe( "listdir", function() {
+    describe( "split", function() {
+
+        beforeEach( function() {
+
+            this.fs = fs.create_fs( fs.MANAGED );
+
+        } );
+
+        it( "should follow python behaviour", function() {
+
+            expect( fs.split( this.fs, '/' ) ).toEqual( ['/', ''] );
+            expect( fs.split( this.fs, '/test' ) ).toEqual( ['/', 'test'] );
+            expect( fs.split( this.fs, '/test/' ) ).toEqual( ['/test', ''] );
+
+            expect( fs.split( this.fs, 'test' ) ).toEqual( ['', 'test'] );
+            expect( fs.split( this.fs, 'test/' ) ).toEqual( ['test', ''] );
+
+            expect( fs.split( this.fs, '/test/ok/a.1' ) ).toEqual( ['/test/ok', 'a.1'] );
+
+        } );
+
+    } );
+
+/*    describe( "listdir", function() {
 
         it( "should return a list of child directories of the given directory inode.", function() {
 
@@ -59,5 +82,5 @@ describe( "Filesystem functions", function() {
         } );
 
     } );
-
+*/
 } );
