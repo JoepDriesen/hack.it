@@ -200,6 +200,54 @@
             proc.outf.write( proc.env_vars.PWD + '\n' );
 
         },
+            
+        service_actions: {
+            start: function( system, proc, program ) {
+                
+                try {
+                    linux.run_service( system, program );
+                    return 0;
+                } catch ( err ) {
+                    proc.outf.write( "service: " + err.message + '\n' );
+                    return 1;
+                }
+                
+            },
+            stop: function( system, proc, program ) {
+                
+                if ( linux.quit_service( system, program ) )
+                    return 0;
+                
+                return 1;
+                
+            },
+            restart: function( system, proc, program ) {
+                
+                e.builtin.service_actions.stop( system, proc, program );
+                e.builtin.service_actions.start( system, proc, program );
+                
+            },
+        },
+        
+        service: function( system, proc, args ) {
+            
+            if ( args.length < 3 || !e.builtin.service_actions[args[1]] ) {
+                
+                proc.outf.write( "Usage: service (start|stop|restart) <service_name>\n" );
+                return 1;
+                
+            }
+            
+            if ( !system.installed_programs[args[2]] ) {
+                
+                proc.outf.write( "service: Unknown service: " + args[2] + '\n' );
+                return 1;
+                
+            }
+            
+            return e.builtin.service_actions[args[1]]( system, proc, system.installed_programs[args[2]] );
+            
+        },
         
     };
     

@@ -2,6 +2,22 @@
     
     var ip = require( 'ip' );
     
+    e.close_port = function( interface, port ) {
+        
+        delete interface.ports[port];
+        
+    }
+    
+    e.connect = function( interface, network ) {
+        
+        if ( interface.network )
+            throw new Error( "Interface is already connected to network." );
+        
+        network.hosts.push( interface );
+        interface.network = network;
+        
+    };
+    
     e.create_interface = function( system, name ) {
         
         return {
@@ -14,6 +30,8 @@
             ip: null,
             subnet: null,
             default_gateway: null,
+            
+            ports: {},
         };
         
     };
@@ -26,16 +44,6 @@
             
             base_latency: 2,
         };
-        
-    };
-    
-    e.connect = function( interface, network ) {
-        
-        if ( interface.network )
-            throw new Error( "Interface is already connected to network." );
-        
-        network.hosts.push( interface );
-        interface.network = network;
         
     };
     
@@ -139,5 +147,23 @@
         return ( interface.ip != null && interface.subnet != null );
 
     };
+    
+    e.is_reserved = function( interface, port ) {
+        
+        return ( interface.ports[port] != undefined );
+    
+    };
+    
+    e.listen_port = function( interface, port, service ) {
+        
+        if ( interface.ports[port] )
+            throw new Error( "Port already in use: " + port );
+        
+        if ( port < 1 || port > 65535 )
+            throw new Error( "Port must be between 1 and 65535");
+        
+        interface.ports[port] = service;
+        
+    }
     
 }( module.exports ) );

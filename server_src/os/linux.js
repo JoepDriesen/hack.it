@@ -86,14 +86,45 @@
 
     };
 
+    e.quit_serivce = function( system, program ) {
+
+        for ( var i in system.process_list ) {
+            
+            var p = system.process_list[i];
+            
+            if ( p.is_daemon && p.program == program ) {
+                
+                system.process_list.splice( i, 1 );
+                p.is_running = false;
+                
+                return p;
+                
+            }
+                
+        }
+        
+        return false;
+
+    };
+
     e.run = function( system, program, inf, outf, errf, args, exit_callback ) {
 
         if ( !system.is_on )
             throw new Error( "System is not booted" );
 
+        if ( !program.on_startup ) {
+            
+            if ( program.on_service_start )
+                throw new Error( "Usage: service start " + program.CMD );
+        
+            throw new Error( "Cannot run program" )
+            
+        }
+        
         var p = {
             pid: system.next_pid,
             is_running: true,
+            is_daemon: false,
             program: program,
 
             inf: inf,
@@ -104,8 +135,43 @@
 
         system.next_pid++;
 
-        if ( program.on_startup )
-            program.on_startup( system, p, args, exit_callback );
+        program.on_startup( system, p, args, exit_callback );
+
+        return p;
+
+    };
+
+    e.run_service = function( system, program ) {
+
+        if ( !system.is_on )
+            throw new Error( "System is not booted" );
+
+        if ( !program.on_service_start )
+            throw new Error( "Cannot be run as a service: " + program.CMD );
+        
+        for ( var i in system.process_list ) {
+            
+            var p = system.process_list[i];
+            if ( p.is_daemon && p.program == program )
+                throw new Error( "Service is already running: " + program.CMD );
+            
+        }
+        
+        var p = {
+            pid: system.next_pid,
+            is_running: true,
+            is_daemon: true,
+            program: program,
+
+            inf: {},
+            outf: {},
+            errf: {}
+        };
+        system.process_list.push( p );
+
+        system.next_pid++;
+
+        program.on_service_start( system, p );
 
         return p;
 
