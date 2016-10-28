@@ -25,10 +25,12 @@
                 return 1;
                 
             }
+            
+        }
+        
+        for ( var i in system.network_interfaces ) {
                 
-            try {
-
-                net.listen_port( interface, 80 )
+            net.listen_port( interface, 25, proc );
             
         }
         
