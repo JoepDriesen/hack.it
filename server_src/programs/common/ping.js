@@ -12,18 +12,48 @@
             proc.outf.write( "Usage: ping <destination_ip>\n" );
             linux.quit( system, proc.pid, exit_callback );
 
-            return;
+            return 1;
 
         }
 
-        if ( !ip.isV4Format( args[1] ) ) {
+        var target = args[1];
 
-            proc.outf.write( "Not a valid ip address: " + args[1] + '\n' );
+        if ( !ip.isV4Format( target ) ) {
+
+            proc.outf.write( "Not a valid ip address: " + target + '\n' );
             linux.quit( system, proc.pid, exit_callback );
 
-            return;
+            return 1;
 
         }
+
+        if ( system.network_interfaces.length <= 0 ) {
+
+            proc.outf.write( "No network interfaces found\n" );
+            linux.quit( system, proc.pid, exit_callback );
+
+            return 1;
+
+        };
+
+        var interface;
+        for ( var i = ( system.network_interfaces.length - 1 ); i>= 0; i++ ) {
+
+            interface = system.network_interfaces[i];
+
+            if ( !net.is_up( interface ) )
+                continue;
+
+            if ( interface.subnet.contains( target ) )
+                break;
+
+        }
+
+        if ( !interface || !net.is_up( interface ) )
+            throw new Error( "No available interface found\n" );
+
+
+        var conn = net.ip_connect( interface, target );
 
         proc.outf.write( 'PING ' + args[1] + ' 56(84) bytes of data.\n' );
 

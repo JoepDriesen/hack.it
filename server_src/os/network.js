@@ -75,5 +75,38 @@
         interface.default_gateway = default_gateway;
         
     };
+
+    e.interface_down = function( interface ) {
+
+        interface.ip = null;
+        interface.subnet = null;
+        interface.default_gateway = null;
+
+    };
+
+    e.ip_connect = function( interface, ip_addr ) {
+
+        if ( !e.is_up( interface ) )
+            throw new Error( "The interface is down." );
+
+        var path = [interface];
+
+        if ( interface.network.arp_table[ip_addr] )
+            path.push( interface.network.arp_table[ip_addr] );
+
+        else
+            return null;
+
+        return {
+            path: path,
+        };
+
+    };
+
+    e.is_up = function( interface ) {
+
+        return ( interface.ip != null && interface.subnet != null && interface.default_gateway != null );
+
+    };
     
 }( module.exports ) );
