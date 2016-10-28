@@ -7,6 +7,7 @@ var linux       = require( global.server_dir + '/os/linux.js' ),
     shell       = require( global.server_dir + '/programs/linux/shell.js' ),
     ip          = require( global.server_dir + '/programs/common/ip.js' ),
     ping        = require( global.server_dir + '/programs/common/ping.js' ),
+    netscan     = require( global.server_dir + '/programs/common/netscan.js' ),
     mainloop    = require( 'mainloop.js' ); 
 
 var network = net.create_network();
@@ -20,6 +21,7 @@ linux.boot( system );
 linux.install( system, shell );
 linux.install( system, ip );
 linux.install( system, ping );
+linux.install( system, netscan );
 
 mainloop.start();
 
