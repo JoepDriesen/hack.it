@@ -23,7 +23,7 @@
 
         proc.outf.write( '\n' );
 
-        linux.quit( system, proc.id, exit_callback );
+        linux.quit( system, proc.pid, exit_callback );
     
     };
     

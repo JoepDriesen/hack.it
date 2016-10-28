@@ -1,6 +1,7 @@
 ( function( e ) {
 
     var linux = require( '../../os/linux.js' ),
+        net = require( '../../os/network.js' ),
         ip = require( 'ip' );
 
     e.CMD = 'ping';
@@ -27,50 +28,49 @@
 
         }
 
-        if ( system.network_interfaces.length <= 0 ) {
-
-            proc.outf.write( "No network interfaces found\n" );
+        var conn;
+        
+        try {
+            
+            conn = net.ip_connect( Object.keys( system.network_interfaces ).map( function( iname ) {
+                return system.network_interfaces[iname];
+            } ).sort( function( iface ) { return iface.name; } ), target );
+            
+        } catch ( err ) {
+            
+            proc.outf.write( "connect: " + err.message + '\n' );
             linux.quit( system, proc.pid, exit_callback );
-
+            
             return 1;
-
-        };
-
-        var interface;
-        for ( var i = ( system.network_interfaces.length - 1 ); i>= 0; i++ ) {
-
-            interface = system.network_interfaces[i];
-
-            if ( !net.is_up( interface ) )
-                continue;
-
-            if ( interface.subnet.contains( target ) )
-                break;
-
+            
         }
 
-        if ( !interface || !net.is_up( interface ) )
-            throw new Error( "No available interface found\n" );
-
-
-        var conn = net.ip_connect( interface, target );
-
-        proc.outf.write( 'PING ' + args[1] + ' 56(84) bytes of data.\n' );
+        proc.outf.write( 'PING ' + target + ' 56(84) bytes of data.\n' );
 
         var pings = 3,
             count = 0,
+            success = 0,
             interval = setInterval( function() {
+                
+                if ( conn ) {
+                    
+                    var lat = conn.latency();
 
-                proc.outf.write( '64 bytes from ' + args[1] + ': icmp_seq=1 ttl=46 time=24.8 ms\n' );
+                    proc.outf.write( '64 bytes from ' + target + ': time=' + lat.toFixed( 1 ) + ' ms\n' );
+                    success++;
+                    
+                } else
+                    proc.outf.write( 'From ' + target + ' Destination Host Unreachable\n' );
                 count++;
 
                 if ( count >= pings ) {
 
                     clearInterval( interval );
                     
-                    proc.outf.write( '--- 8.8.8.8 ping statistics ---\n' );
-                    proc.outf.write( '3 packets transmitted, 2 received, 0% packet loss, time 1001ms\n' );
-                    proc.outf.write( 'rtt min/avg/max/mdev = 24.856/24.878/24.900/0.022 ms\n' );
+                    rate = ( 100 * ( count - success ) / count ).toFixed( 0 );
+                    
+                    proc.outf.write( '--- ' + target + ' ping statistics ---\n' );
+                    proc.outf.write( count + ' packets transmitted, ' + success + ' received, ' + rate + '% packet loss\n' );
 
                     linux.quit( system, proc.pid, exit_callback );
 

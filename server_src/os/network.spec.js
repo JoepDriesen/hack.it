@@ -74,7 +74,7 @@ describe( "A network", function() {
             this.int = net.create_interface();
             net.connect( this.int, this.network );
             
-        })
+        } );
         
         it( "should throw an error if the interface is not connected to a network", function() {
             
@@ -126,13 +126,17 @@ describe( "A network", function() {
     } );
 
     describe( "interface_down", function() {
-
-        it( "should remove the configuration information of the interface", function() {
+        
+        beforeEach( function() {
 
             this.network = net.create_network();
             this.int1 = net.create_interface();
             net.connect( this.int1, this.network );
             net.interface_up_static( this.int1, '192.168.0.1', '192.168.0.0/24', '192.168.0.3' );
+            
+        } );
+
+        it( "should remove the configuration information of the interface", function() {
 
             net.interface_down( this.int1 );
 
@@ -140,6 +144,16 @@ describe( "A network", function() {
             expect( this.int1.subnet ).toEqual( null );
             expect( this.int1.default_gateway ).toEqual( null );
 
+        } );
+        
+        it( "should remove itself from the arp table", function() {
+            
+            net.interface_down( this.int1 );
+            
+            expect( this.network.arp_table['192.168.0.1'] ).toEqual( undefined );
+            
+            net.interface_up_static( this.int1, '192.168.0.1', '192.168.0.0/24', '192.168.0.3' );
+            
         } );
 
     } );
@@ -153,7 +167,7 @@ describe( "A network", function() {
             expect( net.is_up( { ip: null, subnet: 1, default_gateway: null } ) ).toBeFalsy();
             expect( net.is_up( { ip: null, subnet: null, default_gateway: 1 } ) ).toBeFalsy();
             expect( net.is_up( { ip: null, subnet: 1, default_gateway: 1 } ) ).toBeFalsy();
-            expect( net.is_up( { ip: 1, subnet: 1, default_gateway: null } ) ).toBeFalsy();
+            expect( net.is_up( { ip: 1, subnet: 1, default_gateway: null } ) ).toBeTruthy();
             expect( net.is_up( { ip: 1, subnet: null, default_gateway: 1 } ) ).toBeFalsy();
             expect( net.is_up( { ip: 1, subnet: 1, default_gateway: 1 } ) ).toBeTruthy();
 
@@ -175,18 +189,24 @@ describe( "A network", function() {
 
         } );
 
-        it( "should return an error if the interface is not up", function() {
+        it( "should return an error if no interfaces are found that have the possibility to reach the given ip", function() {
 
             net.interface_down( this.int1 );
             expect( function() {
-                net.ip_connect( this.int1, '1.1.1.1' );
-            }.bind( this ) ).toThrowError( "The interface is down." );
+                net.ip_connect( [this.int1], '1.1.1.1' );
+            }.bind( this ) ).toThrowError( "Network is unreachable" );
+
+            // No Default Gateway configured
+            net.interface_up_static( this.int1, '192.168.0.1', '192.168.0.0/24' );
+            expect( function() {
+                net.ip_connect( [this.int1], '1.1.1.1' );
+            }.bind( this ) ).toThrowError( "Network is unreachable" );
 
         } );
 
         it( "should return a direct path between the two interfaces if they are on the same network", function() {
 
-            var conn = net.ip_connect( this.int1, '192.168.0.2' );
+            var conn = net.ip_connect( [this.int1], '192.168.0.2' );
 
             expect( conn.path[0] ).toEqual( this.int1 );
             expect( conn.path[1] ).toEqual( this.int2 );
@@ -195,7 +215,7 @@ describe( "A network", function() {
 
         it( "should return null if no path to the target was found.", function() {
 
-            expect( net.ip_connect( this.int1, '10.11.0.1' ) ).toEqual( null );
+            expect( net.ip_connect( [this.int1], '10.11.0.1' ) ).toEqual( null );
 
         } );
 
