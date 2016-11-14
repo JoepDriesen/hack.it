@@ -1,7 +1,130 @@
 describe( "Filesystem functions", function() {
 
-    var fs = require( './fs.js' );
+    var fs = require( './fs.js' ),
+        file = require( './file.js' );
+    
+    beforeEach( function() {
+        
+        this.filesystem = fs.create_filesystem();
+        this.root = fs.root_directory( this.filesystem );
+        
+    } );
+    
+    describe( "mount_filesystem", function() {
+        
+        it( "should throw an error if the system has already mounted a filesystem at the given mount point", function() {
+            
+            var sys = {};
+            
+            fs.mount( sys, this.filesystem, '' );
+            
+            expect( function() {
+                fs.mount( sys, this.filesystem, '' );
+            }.bind( this ) ).toThrowError( "Filesystem present." );
+            
+        } );
+        
+    } );
+    
+    describe( "create", function() {
+        
+        it( "should add a file with the given name, type and mode to the given directory", function() {
+            
+            fs.create( this.root, 'test', 10, 11 );
+            
+            expect( fs.list( this.root ) ).toContain( 'test' );
+            
+            var f = fs.lookup( this.root, 'test' );
+            
+            expect( fs.mode( f ) ).toEqual( 10 );
+            expect( fs.filetype( f ) ).toEqual( 11 );
+            
+        } );
+        
+        it( "should throw an error if a file with the given filename already exists in the directory", function() {
+            
+            fs.create( this.root, 'test', 10, 11 );
+            
+            expect( function() {
+                fs.create( this.root, 'test', 10, 11 );
+            }.bind( this ) ).toThrowError( "File exists: test" );
+            
+        } );
+        
+        it( "should return the created file inode", function() {
+            
+            expect( fs.create( this.root, 'test', 10, 11 ) ).not.toBeUndefined();
+            
+        } );
+        
+    } );
+    
+    describe( "mkdir", function() {
+        
+        it( "should add a directory with the given name and mode to the given directory", function() {
+            
+            fs.mkdir( this.root, 'test', 10 );
+            
+            expect( fs.list( this.root ) ).toContain( 'test' );
+            
+            var f = fs.lookup( this.root, 'test' );
+            
+            expect( fs.mode( f ) ).toEqual( 10 );
+            expect( fs.filetype( f ) ).toEqual( file.FT_DIRECTORY );
+            
+        } );
+        
+        it( "should return the created directory", function() {
+            
+            expect( fs.mkdir( this.root, 'test', 10 ) ).not.toBeUndefined();
+            
+        } );
+        
+    } );
+    
+    describe( "rename", function() {
+        
+        beforeEach( function() {
+            
+            this.d1 = fs.mkdir( this.root, 'test' );
+            this.d2 = fs.mkdir( this.root, 'test1' );
+            
+            this.f = fs.create( this.d1, 'testfile', 0, 0 );
+            
+        } );
+        
+        it( "should move the file between directories and rename it", function() {
+            
+            expect( fs.list( this.d2 ).length ).toEqual( 0 );
+            
+            fs.rename( this.d1, 'testfile', this.d2, 'testfile2' );
+            
+            expect( fs.list( this.d2 ) ).toContain( 'testfile2' );
+            expect( fs.list( this.d1 ).length ).toEqual( 0 );
+            
+        } );
+        
+        it( "should throw an error if a file with the given filename already exists in the new directory", function() {
+            
+            fs.create( this.d2, 'testfile2', 10, 11 );
+            
+            expect( function() {
+                fs.rename( this.d1, 'testfile', this.d2, 'testfile2' );
+            }.bind( this ) ).toThrowError( "File exists: testfile2" );
+            
+        } );
+        
+        it( "should throw an error if a file with the given filename does not exist in the old directory", function() {
+            
+            expect( function() {
+                fs.rename( this.d1, 'testfile3', this.d2, 'testfile2' );
+            }.bind( this ) ).toThrowError( "No such file or directory: testfile3" );
+            
+        } );
+        
+    } );
 
+/**
     describe( "split", function() {
 
         beforeEach( function() {

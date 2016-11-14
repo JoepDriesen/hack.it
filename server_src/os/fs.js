@@ -1,5 +1,166 @@
 ( function( e ) {
+    
+    var file = require( './file.js' );
+    
+    e.create = function( dir, filename, mode, filetype ) {
+        
+        if ( dir.dentry.children[filename] )
+            throw new Error( "File exists: " + filename );
+        
+        var new_dentry = {
+            
+            children: {},
+            inode: {
+                    
+                    mode: mode,
+                    uid: 0,
+                    gid: 0,
+                    
+                    atime: 0,
+                    mtime: 0,
+                    ctime: 0,
+                    
+                    filetype: filetype,
+                    
+            },
+            name: filename,
+            parent: dir.dentry,
+            
+        };
+        new_dentry.inode.dentry = new_dentry;
+        
+        dir.dentry.children[filename] = new_dentry;
+        
+        return new_dentry.inode;
+        
+    };
+    
+    e.create_filesystem = function() {
+        
+        var fs = {
+            
+            root: {
+            
+                children: {},
+                inode: {
+                    
+                    mode: 509,
+                    uid: 0,
+                    gid: 0,
+                    
+                    atime: 0,
+                    mtime: 0,
+                    ctime: 0,
+                    
+                    filetype: file.FT_DIRECTORY,
+                    
+                },
+                name: null,
+                parent: null,
+            
+            }
+            
+        };
+        fs.root.inode.dentry = fs.root;
+        
+        return fs;
+        
+    };
+    
+    e.filesystem = function( system, mount_point ) {
+        
+        if ( !system.fs || !system.fs[mount_point] )
+            return null;
+        
+        return system.fs[mount_point];
+        
+    };
+    
+    e.filetype = function( inode ) {
+        
+        return inode.filetype;
+        
+    };
+    
+    e.list = function( dir ) {
+        
+        return Object.keys( dir.dentry.children ).sort();
+        
+    };
+    
+    e.lookup = function( dir, filename ) {
+        
+        if ( !dir.dentry.children[filename] )
+            return null;
+        
+        return dir.dentry.children[filename].inode;
+        
+    };
+    
+    e.mkdir = function( dir, filename, mode ) {
+        
+        return e.create( dir, filename, mode, file.FT_DIRECTORY );
+        
+    };
+    
+    e.mode = function( inode ) {
+        
+        return inode.mode;
+        
+    };
+    
+    e.mount = function( system, filesystem, mount_point ) {
+        
+        if ( system.fs && system.fs[mount_point])
+            throw new Error( "Filesystem present." );
+        
+        if ( !system.fs )
+            system.fs = {};
+        
+        system.fs[mount_point] = filesystem;
+        
+    };
+    
+    e.rename = function( old_dir, old_filename, new_dir, new_filename ) {
+        
+        if ( !old_dir.dentry.children[old_filename] )
+            throw new Error( "No such file or directory: " + old_filename );
+        
+        if ( new_dir.dentry.children[new_filename] )
+            throw new Error( "File exists: " + new_filename );
+        
+        var new_dentry = {
+            
+            children: {},
+            inode: old_dir.dentry.children[old_filename].inode,
+            name: new_filename,
+            parent: new_dir.dentry,
+            
+        };
+        new_dentry.inode.dentry = new_dentry;
+        
+        new_dir.dentry.children[new_filename] = new_dentry;
+        delete old_dir.dentry.children[old_filename];
+        
+    };
 
+    e.rmdir = function( dir, filename ) {
+        
+        if ( !dir.dentry.children[filename] )
+            throw new Error( "No such file or directory: " + filename );
+        
+        delete dir.dentry.children[filename];
+        
+    };
+    
+    e.root_directory = function( filesystem ) {
+        
+        return filesystem.root.inode;
+        
+    };
+    
+    
+/**
     e.TYPES = {
         GENERATED: 0,
         MANAGED: 1,
@@ -207,5 +368,6 @@
         },
  
     };
-
+*/
+    
 }( module.exports ) );

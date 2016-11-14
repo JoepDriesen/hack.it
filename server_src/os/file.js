@@ -1,7 +1,13 @@
 ( function( e ) {
 
-    e.READ_FAST = 0;
-    e.READ_SLOW = 1;
+    // File Types
+    e.FT_REGULAR = 0;
+    e.FT_DIRECTORY = 1;
+    e.FT_BLOCK = 2;
+    e.FT_CHARACTER = 3;
+    e.FT_PIPE = 4;
+    e.FT_LINK = 5;
+    e.FT_SOCKET = 6;
 
 
 
