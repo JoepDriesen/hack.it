@@ -10,7 +10,7 @@
 
         if ( args.length <= 1 ) {
             
-            proc.outf.write( "Usage: ping <destination_ip>\n" );
+            proc.outf.write( "Usage: ping <target_ip>\n" );
             linux.quit( system, proc.pid, exit_callback );
 
             return 1;

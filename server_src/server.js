@@ -2,26 +2,13 @@
 
 global.server_dir = __dirname;
 
-var linux       = require( global.server_dir + '/os/linux.js' ),
-    net         = require( global.server_dir + '/os/network.js' ),
+var kernel      = require( global.server_dir + '/os/kernel.js' ),
     shell       = require( global.server_dir + '/programs/linux/shell.js' ),
-    ip          = require( global.server_dir + '/programs/common/ip.js' ),
-    ping        = require( global.server_dir + '/programs/common/ping.js' ),
-    netscan     = require( global.server_dir + '/programs/common/netscan.js' ),
     mainloop    = require( 'mainloop.js' ); 
 
-var network = net.create_network();
-
-var system = linux.create_system();
-var int = linux.add_interface( system, 'eth0' );
-net.connect( int, network );
-net.interface_up_static( int, '192.168.0.1', '192.168.0.0/24', '192.168.0.1' );
-
-linux.boot( system );
-linux.install( system, shell );
-linux.install( system, ip );
-linux.install( system, ping );
-linux.install( system, netscan );
+var system = kernel.create_system();
+kernel.boot( system );
+kernel.install( system, shell );
 
 mainloop.start();
 
@@ -29,7 +16,7 @@ console.log( ':: Server\t:: Server startup complete.' );
 
 var start_shell = function() {
 
-    linux.run( system, shell, process.stdin, process.stdout, process.stderr, [], start_shell );
+    kernel.run( system, shell, process.stdin, process.stdout, process.stderr, [], start_shell );
 
 };
 start_shell();

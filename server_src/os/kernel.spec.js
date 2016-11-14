@@ -1,31 +1,24 @@
-describe( "Linux OS functions", function() {
+describe( "Kernel functions", function() {
 
-    var linux = require( './linux.js' ),
-        net = require( './network.js' );
+    var kernel = require( './kernel.js' );
 
     describe( "create_system", function() {
 
         beforeEach( function() {
 
-            this.system = linux.create_system();
-
-        } );
-
-        it( "should return a linux system object.", function() {
-
-            expect( this.system ).not.toBeNull();
+            this.system = kernel.create_system();
 
         } );
 
         it( "should not be turned on.", function() {
 
-            expect( this.system.is_on ).toBeFalsy();
+            expect( kernel.is_on( this.system ) ).toBeFalsy();
 
         } );
 
         it( "should not have any programs installed.", function() {
 
-            expect( this.system.installed_programs ).toEqual( [] );
+            expect( kernel.installed_programs( this.system ) ).toEqual( [] );
 
         } );
 
@@ -35,17 +28,15 @@ describe( "Linux OS functions", function() {
 
         beforeEach( function() {
 
-            this.system = linux.create_system();
+            this.system = kernel.create_system();
 
         } );
 
         it( "should initialize the given system.", function() {
 
-            expect( this.system.is_on ).toBeFalsy();
+            kernel.boot( this.system );
 
-            linux.boot( this.system );
-
-            expect( this.system.is_on ).toBeTruthy();
+            expect( kernel.is_on( this.system ) ).toBeTruthy();
 
         } );
 
@@ -55,11 +46,11 @@ describe( "Linux OS functions", function() {
 
         it( "should turn the system off.", function() {
 
-            var system = linux.create_system();
-            linux.boot( system );
-            linux.shutdown( system );
+            var system = kernel.create_system();
+            kernel.boot( system );
+            kernel.shutdown( system );
 
-            expect( system.is_on ).toBeFalsy();
+            expect( kernel.is_on( system ) ).toBeFalsy();
 
         } );
 
@@ -69,41 +60,87 @@ describe( "Linux OS functions", function() {
 
         beforeEach( function() {
 
-            this.system = linux.create_system();
+            this.system = kernel.create_system();
 
-            this.program = {
-                
-                CMD: 'test',
-                on_install: function() {}
+        } );
 
-            }; 
+        it( "should return true if the installation was successfull, false if the program was already installed", function() {
+            expect( kernel.install( this.system, "Test Program", {} ) ).toBeTruthy();
+            expect( kernel.install( this.system, "Test Program", {} ) ).toBeFalsy();
 
         } );
 
         it( "should add the program to the list of installed programs, if it is not yet installed.", function() {
 
-            linux.install( this.system, this.program );
+            kernel.install( this.system, "Test Program", {} );
 
-            expect( this.system.installed_programs[this.program.CMD] ).toEqual( this.program );
-
-        } );
-
-        it( "should run the install script on installation, if it is not yet installed", function() {
-
-            spyOn( this.program, 'on_install' );
-
-            linux.install( this.system, this.program );
-
-            expect( this.program.on_install ).toHaveBeenCalledWith( this.system );
-
-            linux.install( this.system, this.program );
-
-            expect( this.program.on_install ).toHaveBeenCalledTimes( 1 );
+            expect( kernel.installed_programs( this.system ) ).toContain( "Test Program" );
 
         } );
 
     } );
 
+    describe( "uninstall", function() {
+
+        beforeEach( function() {
+
+            this.system = kernel.create_system();
+
+            kernel.install( this.system, "test", {} );
+
+        } );
+
+        it( "should return true if the installation was successful, false if the program was not installed", function() {
+
+            expect( kernel.uninstall( this.system, "test" ) ).toBeTruthy();
+            expect( kernel.uninstall( this.system, "test" ) ).toBeFalsy();
+
+        } );
+
+        it( "should remove the program with the given name from the list of installed programs", function() {
+
+            kernel.uninstall( this.system, "test" );
+
+            expect( kernel.installed_programs( this.system ) ).not.toContain( "test" );
+
+        } );
+
+    } );
+
+    describe( "is_installed", function() {
+
+        beforeEach( function() {
+
+            this.system = kernel.create_system();
+
+        } );
+
+        it( "should return true if a program with the given name is installed on the given system", function() {
+
+            kernel.install( this.system, "test", {} );
+
+            expect( kernel.is_installed( this.system, "test" ) ).toBeTruthy();
+
+            kernel.uninstall( this.system, "test" );
+
+            expect( kernel.is_installed( this.system, "test" ) ).toBeFalsy();
+
+        } );
+
+        it( "should return the program if a program with the given name is installed", function() {
+
+            var prog = {
+                name: "test",
+            };
+
+            kernel.install( this.system, "test", prog );
+
+            expect( kernel.is_installed( this.system, "test" ) ).toEqual( prog );
+
+        } );
+
+    } );
+/**
     describe( "run", function() {
 
         beforeEach( function() {
@@ -273,5 +310,5 @@ describe( "Linux OS functions", function() {
         } );
         
     } );
-
+**/
 } );

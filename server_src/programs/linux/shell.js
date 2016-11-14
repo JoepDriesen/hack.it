@@ -1,6 +1,6 @@
 ( function( e ) {
 
-    var linux = require( '../../os/linux.js' );
+    var kernel = require( '../../os/kernel.js' );
     var fs = require( '../../os/fs.js' );
 
     e.CMD = 'shell';
@@ -29,7 +29,7 @@
             proc.inf.removeListener( 'data', proc.params.read_callback );
             proc.is_running = false;
 
-            var p = linux.run( system, system.installed_programs[command[0]], proc.inf, proc.outf, proc.errf, command, function() {
+            var p = kernel.run( system, system.installed_programs[command[0]], proc.inf, proc.outf, proc.errf, command, function() {
 
                 proc.inf.on( 'data', proc.params.read_callback );
                 proc.is_running = true;
@@ -137,7 +137,7 @@
 
             proc.inf.removeListener( 'data', proc.params.read_callback );
 
-            linux.quit( system, proc.pid, proc.params.exit_callback );
+            kernel.quit( system, proc.pid, proc.params.exit_callback );
 
             return 0;
 
@@ -205,7 +205,7 @@
             start: function( system, proc, program ) {
                 
                 try {
-                    linux.run_service( system, program );
+                    kernel.run_service( system, program );
                     return 0;
                 } catch ( err ) {
                     proc.outf.write( "service: " + err.message + '\n' );
@@ -215,7 +215,7 @@
             },
             stop: function( system, proc, program ) {
                 
-                if ( linux.quit_service( system, program ) )
+                if ( kernel.quit_service( system, program ) )
                     return 0;
                 
                 return 1;
