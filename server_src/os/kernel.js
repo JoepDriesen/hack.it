@@ -1,16 +1,8 @@
 ( function( e ) {
 
-    e.boot = function( system ) {
-
-        system.is_on = true;
-
-    };
-
     e.create_system = function() {
 
         return {
-
-            is_on: false,
 
             installed_programs: [],
 
@@ -18,12 +10,12 @@
 
     };
 
-    e.install = function( system, program_name, program ) {
+    e.install = function( system, program ) {
 
-        if ( system.installed_programs[program_name] || !program )
+        if ( system.installed_programs[program.CMD] || !program )
             return false;
 
-        system.installed_programs[program_name] = program;
+        system.installed_programs[program.CMD] = program;
 
         return true;
 
@@ -35,30 +27,21 @@
 
     };
 
-    e.is_installed = function( system, program_name ) {
+    e.is_installed = function( system, program_or_cmd ) {
 
-        return system.installed_programs[program_name];
+        if ( program_or_cmd.CMD )
+            return system.installed_programs[program_or_cmd.CMD];
 
-    };
-
-    e.is_on = function( system ) {
-
-        return system.is_on;
-
-    };
-    
-    e.shutdown = function( system ) {
-
-        system.is_on = false;
+        return system.installed_programs[program_or_cmd];
 
     };
 
-    e.uninstall = function( system, program_name ) {
+    e.uninstall = function( system, program ) {
 
-        if ( !system.installed_programs[program_name] )
+        if ( !system.installed_programs[program.CMD] )
             return false;
 
-        delete system.installed_programs[program_name];
+        delete system.installed_programs[program.CMD];
 
         return true;
 

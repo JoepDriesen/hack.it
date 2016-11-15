@@ -1,30 +1,38 @@
 ( function( e ) {
 
-    var linux = require( '../../os/linux.js' );
+    var kernel = require( '../../os/kernel.js' ),
+        file = require( '../../os/file.js' ),
+        proc = require( '../../os/process.js' ),
+        link = require( '../../os/network/link.js' ),
+        internet = require( '../../os/network/internet.js' ),
+        EventEmitter = require( 'events' );
     
     e.CMD = 'ip';
+    e.EVENTS = new EventEmitter();
     
-    e.on_startup = function( system, proc, args, exit_callback ) {
+    e.EVENTS.on( 'start', function( process, args ) {
 
         var i = 0;
 
-        proc.outf.write( 'Network Interfaces:\n\n' );
-    
-        for ( var iname in system.network_interfaces ) {
+        for ( var iname in link.system_interfaces( proc.system( process ) ) ) {
             
-            var int = system.network_interfaces[iname];
+            var iface = link.system_interface( proc.system( process ), iname );
             
-            proc.outf.write( i + ": " + int.name + ":\n" );
-            proc.outf.write( "  ip:               " + int.ip + "\n" );
-            proc.outf.write( "  subnet:           " + int.subnet.networkAddress + "/" + int.subnet.subnetMaskLength + "\n" );
-            proc.outf.write( "  default gateway:  " + int.default_gateway + "\n" );
-            
+            file.write( proc.outf( process), ( i + 1 ) + ": " + iname + ":\n" );
+            file.write( proc.outf( process), "    mac " + link.physical_address( iface ) + "\n" );
+
+            for ( var i in internet.addresses( iface ) ) {
+
+                var address = internet.addresses( iface )[i];
+
+                file.write( proc.outf( process ), "    ip " + address + "\n" );
+
+            }
+
         }
 
-        proc.outf.write( '\n' );
+        proc.stop_process( proc.system( process ), proc.pid( process ) );
 
-        linux.quit( system, proc.pid, exit_callback );
-    
-    };
+    } );
     
 }( module.exports ) );

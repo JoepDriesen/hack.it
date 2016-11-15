@@ -1,76 +1,104 @@
 ( function( e ) {
 
-    var kernel = require( '../../os/kernel.js' );
-    var fs = require( '../../os/fs.js' );
+    var kernel = require( '../../os/kernel.js' ),
+        fs = require( '../../os/fs.js' ),
+        file = require( '../../os/file.js' ),
+        proc = require( '../../os/process.js' ),
+        EventEmitter = require( 'events' );
+
+
 
     e.CMD = 'shell';
+    e.EVENTS = new EventEmitter();
+
+    e.EVENTS.on( 'start', function( process ) {
+
+        proc.set_process_data( process, 'ENVIRONMENT_VARIABLES', {
+            PWD: '/',
+        } );
+
+        e.print_prompt( proc.outf( process ) );
+
+        file.read( proc.inf( process ), e.read_command( process ) );
+        
+    } );
+
+    e.read_command = function( process ) {
+
+        var read_command = function( data ) {
+
+            e.on_command_input( process, data );
+
+            if ( !proc.is_running( proc.system( process ), proc.pid( process ) ) || proc.blocked( process ) )
+                return;
+                
+            e.print_prompt( proc.outf( process ) );
+            file.read( proc.inf( process ), read_command );
+
+        };
+
+        return read_command;
+
+    };
 
 
-    e.on_command_input = function( system, proc, command ) {
+    e.on_command_input = function( process, command ) {
     
-        var command = e.parse_command( command );
+        var command = e.parse_command( command ),
+            system = proc.system( process );
         
         if ( command.length <= 0 ) {
 
-            e.print_prompt( system, proc );
             return 1;
         }
     
         else if ( e.builtin[command[0]] ) {
 
-            var ret = e.builtin[command[0]]( system, proc, command );
-            e.print_prompt( system, proc );
+            var ret = e.builtin[command[0]]( process, command );
 
             return ret;
         }
 
-        else if ( system.installed_programs[command[0]] ) {
+        var program = kernel.is_installed( system, command[0] );
 
-            proc.inf.removeListener( 'data', proc.params.read_callback );
-            proc.is_running = false;
+        if ( program ) {
 
-            var p = kernel.run( system, system.installed_programs[command[0]], proc.inf, proc.outf, proc.errf, command, function() {
+            var p = proc.start_process( system, program, command, proc.inf( process ), proc.outf( process ), proc.errf( process ) );
 
-                proc.inf.on( 'data', proc.params.read_callback );
-                proc.is_running = true;
-                e.print_prompt( system, proc );
+            if ( proc.is_running( system, proc.pid( p ) ) ) {
 
-            } );
-            
+                proc.block( process );
+
+                var stop_listener = function( program_process ) {
+    
+                    if ( proc.pid( program_process ) != proc.pid( p ) )
+                        return;
+    
+                    program.EVENTS.removeListener( 'stop', stop_listener );
+    
+                    proc.unblock( process );
+    
+                    file.read( proc.inf( process ), e.read_command( process ) );
+                    e.print_prompt( proc.outf( process ) );
+    
+                };
+                program.EVENTS.on( 'stop', stop_listener );
+
+            }
+
         } 
         
         else {
 
-            proc.outf.write( "shell: " + command[0] + ": command not found\n" );
-            e.print_prompt( system, proc );
+            file.write( proc.outf( process ), "shell: " + command[0] + ": command not found\n" );
             return ret;
         
         }
     
     };
     
-    e.on_startup = function( system, proc, args, exit_callback ) {
-    
-        proc.env_vars = {
-            PWD: '/',
-        };
-
-        proc.params = {
-            exit_callback: exit_callback,
-            read_callback: function( d ) {
-                e.on_command_input( system, proc, d.toString() );
-            },
-
-        };
-    
-        e.print_prompt( system, proc );
-        
-        proc.inf.on( 'data', proc.params.read_callback );
-    
-    };
-    
     e.parse_command = function( command ) {
-    
+   
         command = command.trim();
     
         var parts = command.split( ' ' );
@@ -87,9 +115,9 @@
     
     };
     
-    e.print_prompt = function( system, proc ) {
+    e.print_prompt = function( outf ) {
     
-        proc.outf.write( '$ ' );
+        file.write( outf, '$ ' );
     
     };
 
@@ -101,154 +129,185 @@
      */
 
     e.builtin = {
-        cd: function( system, proc, args ) {
+
+        cd: function( process, args ) {
         
-            var dir = args[1];
+            var path = args[1];
 
-            if ( !dir ) {
+            if ( !path ) {
 
-                proc.outf.write( "cd: At least one argument is required\n");
+                file.write( proc.outf( process ), "cd: At least one argument is required\n" );
                 return 1;
 
             }
 
-            var abs_dir = fs.join( system.fs, proc.env_vars.PWD, dir );
+            var path_parts = path.split( '/' ),
+                filesystem = fs.filesystem( proc.system( process ), path_parts[0] ),
+                inode;
 
-            if ( !fs.exists( system.fs, abs_dir ) ) {
+            if ( !filesystem ) {
 
-                proc.outf.write( "cd: " + dir + ": No such file or directory\n" );
+                file.write( proc.outf( process ), "cd: I/O error\n" );
                 return 1;
 
             }
 
-            if ( !fs.is_dir( system.fs, abs_dir ) ) {
+            path_parts.splice( 0, 1 );
 
-                proc.outf.write( "cd: " + dir + ": Not a directory\n" );
+            try {
+
+                inode = fs.lookup_path( filesystem, path_parts );
+
+            } catch ( e ) {
+
+                file.write( proc.outf( process ), "cd: " + e.message + "\n" );
                 return 1;
 
             }
 
-            proc.env_vars.PWD = abs_dir;
+            if ( fs.filetype( inode ) != fs.FT_DIRECTORY ) {
+
+                proc.outf.write( "cd: " + path + ": Not a directory\n" );
+                return 1;
+
+            }
+
+            proc.env_vars.PWD = path;
             return 0;
 
         },
 
-        exit: function( system, proc, args ) {
+        exit: function( process, args ) {
 
-            proc.inf.removeListener( 'data', proc.params.read_callback );
-
-            kernel.quit( system, proc.pid, proc.params.exit_callback );
+            proc.stop_process( proc.system( process ), proc.pid( process ) );
 
             return 0;
 
         },
         
-        ls: function( system, proc, args ) {
+        ls: function( process, args ) {
             
             var abs_path;
             if ( args.length > 1 )
-                abs_path = fs.join( system.fs, proc.env_vars.PWD, args[1] );
+                abs_path = args[1];
                 
             else
-                abs_path = proc.env_vars.PWD;
-            
+                abs_path = proc.get_process_data( process, 'ENVIRONMENT_VARIABLES' ).PWD;
+
+            if ( abs_path.endsWith( '/' ) )
+                abs_path = abs_path.substring( 0, abs_path.length - 1 );
+
+            var path_parts = abs_path.split( '/' ),
+                filesystem = fs.filesystem( proc.system( process ), path_parts[0] ),
+                inode;
+
+            if ( !filesystem ) {
+
+                file.write( proc.outf( process ), "ls: I/O error\n" );
+                return 1;
+
+            }
+
+            path_parts.splice( 0, 1 );
+
             try {
                 
-                var dirs = fs.listdir( system.fs, abs_path );
-                
-                if ( dirs.length > 0 )
-                    proc.outf.write( dirs.join( '\t' ) + '\n' );
-                
-                return 0;
-                
-            } catch( err ) {
-                
-                proc.outf.write( 'ls: ' + err.message + '\n' );
-                
-            }
-            
-        },
-        
-        mkdir: function( system, proc, args ) {
-        
-            var dir = args[1];
+                inode = fs.lookup_path( filesystem, path_parts );
 
-            if ( !dir ) {
+            } catch ( e ) {
 
-                proc.outf.write( "mkdir: At least one argument is required\n");
+                file.write( proc.outf( process ), "ls: " + e.message + "\n" );
                 return 1;
 
             }
+
+            var list = fs.list( inode );
+
+            for ( var i in list ) {
+
+                var entry = list[i];
+
+                if ( fs.filetype( fs.lookup( inode, list[i] ) ) == fs.FT_DIRECTORY )
+                    entry += "/";
+
+                file.write( proc.outf( process ), entry + "  " );
+
+            }
+                
+            if ( list.length > 0 )
+                file.write( proc.outf( process ), '\n' );
+                
+            return 0;
             
-            var abs_path = fs.join( system.fs, proc.env_vars.PWD, dir );
+        },
+        
+        mkdir: function( process, args ) {
+
+            var dirname = args[1];
+
+            if ( !dirname ) {
+
+                file.write( proc.outf( process ), "mkdir: missing operand\n" );
+                return 1;
+
+            }
+           
+            var abs_path = proc.get_process_data( process, 'ENVIRONMENT_VARIABLES' ).PWD;
             
+            if ( abs_path.endsWith( '/' ) )
+                abs_path = abs_path.substring( 0, abs_path.length - 1 );
+
+            var path_parts = abs_path.split( '/' ),
+                filesystem = fs.filesystem( proc.system( process ), path_parts[0] ),
+                inode;
+
+            if ( !filesystem ) {
+
+                file.write( proc.outf( process ), "mkdir: I/O error\n" );
+                return 1;
+
+            }
+
+            path_parts.splice( 0, 1 );
+
             try {
                 
-                fs.mkdir( system.fs, abs_path );
-                
-                return 0;
-                
-            } catch( err ) {
-                
-                proc.outf.write( 'mkdir: ' + err.message + '\n' );
-            }
+                inode = fs.lookup_path( filesystem, path_parts );
+
+            } catch ( e ) {
+
+                file.write( proc.outf( process ), "mkdir: " + e.message + "\n" );
+                return 1;
             
+            }
+
+            if ( fs.filetype( inode ) != fs.FT_DIRECTORY ) {
+
+                proc.outf.write( "mkdir: " + abs_path + ": Not a directory\n" );
+                return 1;
+
+            }
+
+            try {
+
+                fs.mkdir( inode, dirname );
+
+            } catch ( e ) {
+
+                return 1;
+
+            }
+                
+            return 0;
+                
         },
 
-        pwd: function( system, proc, args ) {
+        pwd: function( process, args ) {
 
-            proc.outf.write( proc.env_vars.PWD + '\n' );
+            file.write( proc.outf( process ), proc.get_process_data( process, 'ENVIRONMENT_VARIABLES' ).PWD + '\n' );
 
         },
             
-        service_actions: {
-            start: function( system, proc, program ) {
-                
-                try {
-                    kernel.run_service( system, program );
-                    return 0;
-                } catch ( err ) {
-                    proc.outf.write( "service: " + err.message + '\n' );
-                    return 1;
-                }
-                
-            },
-            stop: function( system, proc, program ) {
-                
-                if ( kernel.quit_service( system, program ) )
-                    return 0;
-                
-                return 1;
-                
-            },
-            restart: function( system, proc, program ) {
-                
-                e.builtin.service_actions.stop( system, proc, program );
-                e.builtin.service_actions.start( system, proc, program );
-                
-            },
-        },
-        
-        service: function( system, proc, args ) {
-            
-            if ( args.length < 3 || !e.builtin.service_actions[args[1]] ) {
-                
-                proc.outf.write( "Usage: service (start|stop|restart) <service_name>\n" );
-                return 1;
-                
-            }
-            
-            if ( !system.installed_programs[args[2]] ) {
-                
-                proc.outf.write( "service: Unknown service: " + args[2] + '\n' );
-                return 1;
-                
-            }
-            
-            return e.builtin.service_actions[args[1]]( system, proc, system.installed_programs[args[2]] );
-            
-        },
-        
     };
     
  }( module.exports ) );

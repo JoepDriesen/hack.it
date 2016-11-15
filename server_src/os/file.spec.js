@@ -1,99 +1,108 @@
 describe( "File functions:", function() {
 
     var file = require( './file.js' ),
+        fs = require( './fs.js' ),
         EventEmitter = require( 'events' );
-/**
-    describe( "read", function() {
+
+    describe( "read/write", function() {
         
-        describe( "regular file", function() {
+        describe( "directory file", function() {
 
-            it( "should immediately return the files content as data in the callback.", function() {
+            beforeEach( function() {
 
-                var fd = {
-                    readtype: file.FT_REGULAR,
-                    file: {
-                        content: "test",
-                    },
-                };
-
-                var read = "";
-                file.read( fd, function( data ) {
-                    read = data;
-                } );
-
-                expect( read ).toEqual( "test" );
+                this.fd = file._create_file_descriptor( fs.FT_DIRECTORY );
 
             } );
             
-        } );
-        
-        describe( "directory file", function() {
-            
             it( "should throw an error if a directory is read", function() {
                 
-                var fd = {
-                    filetype: file.FT_DIRECTORY;
-                };
+                expect( function() {
+                    file.read( this.fd );
+                }.bind( this ) ).toThrowError( "Cannot read from directory." );
+
+            })
+            
+            it( "should throw an error if a directory is written to", function() {
                 
                 expect( function() {
-                    file.read( fd );
-                } ).toThrowError( "\")
+                    file.write( this.fd );
+                }.bind( this ) ).toThrowError( "Cannot write to directory." );
             })
             
         } );
 
-        it( "should call the callback function with the read data when data is available to read for a slow file", function() {
+        describe( "character stream file", function() {
 
-            var fd = new EventEmitter();
-            fd.readtype = file.READ_SLOW;
+            beforeEach( function() {
 
-            var read = "";
-            file.read( fd, function( data ) {
-                read = data;
+                this.fd = file._create_file_descriptor( fs.FT_CHARACTER );
+
             } );
 
-            expect( read ).toEqual( "" );
+            it( "should call the callback function when data available from the character stream", function() {
 
-            fd.emit( 'data', "test2" );
+                var read = "";
+                file.read( this.fd, function( data ) {
+                    read = data;
+                } );
 
-            expect( read ).toEqual( "test2" );
+                expect( read ).toEqual( "" );
+
+                this.fd.emit( 'data', "test" );
+
+                expect( read ).toEqual( "test" );
+
+            } );
+
+            it( "should throw an error when writing to the character stream", function() {
+
+                expect( function() {
+                    file.write( this.fd, "" );
+                }.bind( this ) ).toThrowError( "Cannot write to character device." );
+
+            } );
 
         } );
 
-        it( "should only call the callback once", function() {
+        describe( "pipe file", function() {
 
-            var fd = new EventEmitter();
-            fd.readtype = file.READ_SLOW;
+            beforeEach( function() {
 
-            var read = "";
-            file.read( fd, function( data ) {
-                read = data;
+                this.fd = file._create_file_descriptor( fs.FT_PIPE );
+
             } );
 
-            fd.emit( 'data', "test2" );
-            fd.emit( 'data', "test3" );
+            it( "should call the callback function when data is written to the pipe", function() {
 
-            expect( read ).toEqual( "test2" );
+                var read = "";
+                file.read( this.fd, function( data ) {
+                    read = data;
+                } );
+    
+                expect( read ).toEqual( "" );
+    
+                file.write( this.fd, "test2" );
+    
+                expect( read ).toEqual( "test2" );
+    
+            } );
+
+            it( "should only call the callback once", function() {
+    
+                var read = "";
+                file.read( this.fd, function( data ) {
+                    read = data;
+                } );
+    
+                file.write( this.fd, "test2" );
+                file.write( this.fd, "test3" );
+    
+                expect( read ).toEqual( "test2" );
+    
+            } );
 
         } );
 
     } );
 
-    describe( "write", function() {
-
-        it( "should call the write function of the file descriptor with the data to write", function() {
-
-            var written,
-                fd = {
-
-                write: function( d ) {
-                    written = d;
-                },
-
-            };
-
-        } );
-
-    } );
-**/
 } );

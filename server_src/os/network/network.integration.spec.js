@@ -1,6 +1,7 @@
 describe( "Network integration tests:", function() {
 
     var kernel = require( './../kernel.js' ),
+        file = require( './../file.js' ),
         link = require( './link.js' ),
         internet = require( './internet.js' ),
         transport = require( './transport.js' );
@@ -13,7 +14,6 @@ describe( "Network integration tests:", function() {
             net1 = link.create_network();
 
         link.attach( iface1_1, net1 );
-        kernel.boot( sys1 );
         link.interface_up( iface1_1 );
 
         var sys2 = kernel.create_system(),
@@ -25,7 +25,6 @@ describe( "Network integration tests:", function() {
         link.attach( iface2_1, net1 );
         link.attach( iface2_2, net2 );
 
-        kernel.boot( sys2 );
         link.interface_up( iface2_1 );
         link.interface_up( iface2_2 );
 
@@ -34,7 +33,6 @@ describe( "Network integration tests:", function() {
 
         link.attach( iface3_1, net2 );
         
-        kernel.boot( sys3 );
         link.interface_up( iface3_1 );
 
 
@@ -48,10 +46,33 @@ describe( "Network integration tests:", function() {
 
 
 
-        transport.listen( sys3, '192.168.1.2', 80, transport.TCP );
+        var listen_sock_fd;
+        transport.listen( sys3, '192.168.1.2', 80, transport.TCP, function( fd ) {
+            listen_sock_fd = fd;
+        } );
 
-        var sock = transport.connect( sys1, '192.168.1.2', 80, transport.TCP );
+        var connect_sock_fd = transport.connect( sys1, '192.168.1.2', 80, transport.TCP );
 
+        var read = "";
+        file.read( listen_sock_fd, function( d ) {
+            read = d;
+        } );
+
+        file.write( connect_sock_fd, "test" );
+
+        expect( read ).toEqual( "test" );
+
+        file.write( connect_sock_fd, "test2" );
+
+        expect( read ).toEqual( "test" );
+
+        file.read( connect_sock_fd, function( d ) {
+            read = d;
+        } );
+
+        file.write( listen_sock_fd, "test2" );
+
+        expect( read ).toEqual( "test2" );
 
     } );
 

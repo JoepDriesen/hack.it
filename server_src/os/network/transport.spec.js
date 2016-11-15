@@ -196,17 +196,38 @@ describe( "Network Transport Layer:", function() {
 
             spyOn( internet_mock, 'arp_resolve' ).and.returnValue( this.iface2 );
 
+            var sock = transport.listen( {}, '192.168.0.2', 80, transport.PROTO_TCP );
+
             spyOn( transport, 'is_listening_on' ).and.callFake( function( system, ip_address, port ) {
                 if ( ip_address == '192.168.0.2' && port == 80 )
-                    return {
-                        protocol: transport.PROTO_TCP,
-                    };
+                    return sock;
                 return false;
             } );
 
             expect( transport.connect( this.system, '192.168.0.2', 80, transport.PROTO_TCP ) ).not.toEqual( undefined );
 
         } );
+
+        it( "should call the accept callback of the listen side, and return a file descriptor for the connecting side", function() {
+
+            spyOn( internet_mock, 'arp_resolve' ).and.returnValue( this.iface2 );
+
+            var listen_sock_fd;
+            var sock = transport.listen( {}, '192.168.0.2', 80, transport.PROTO_TCP, function( fd ) {
+                listen_sock_fd = fd;
+            } );
+
+
+            spyOn( transport, 'is_listening_on' ).and.callFake( function( system, ip_address, port ) {
+                if ( ip_address == '192.168.0.2' && port == 80 )
+                    return sock;
+                return false;
+            } );
+
+            var sock_fd = transport.connect( this.system, '192.168.0.2', 80, transport.PROTO_TCP );
+
+        } );
+
 
     } );
 

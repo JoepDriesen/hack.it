@@ -1,7 +1,6 @@
 describe( "Filesystem functions", function() {
 
-    var fs = require( './fs.js' ),
-        file = require( './file.js' );
+    var fs = require( './fs.js' );
     
     beforeEach( function() {
         
@@ -70,7 +69,7 @@ describe( "Filesystem functions", function() {
             var f = fs.lookup( this.root, 'test' );
             
             expect( fs.mode( f ) ).toEqual( 10 );
-            expect( fs.filetype( f ) ).toEqual( file.FT_DIRECTORY );
+            expect( fs.filetype( f ) ).toEqual( fs.FT_DIRECTORY );
             
         } );
         
@@ -122,6 +121,30 @@ describe( "Filesystem functions", function() {
             
         } );
         
+    } );
+
+    describe( "lookup_path", function() {
+
+        beforeEach( function() {
+
+            this.d1 = fs.mkdir( this.root, 'test' );
+
+        } );
+
+        it( "should throw an error if a component of the path does not exist", function() {
+
+            expect( function() {
+                fs.lookup_path( this.filesystem, [ 'test', 'nope' ] );
+            } ).toThrowError();
+
+        } );
+
+        it( "should return the inode if the path exists in the filesystem", function() {
+
+            expect( fs.lookup_path( this.filesystem, [ 'test' ] ) ).toEqual( this.d1 );
+
+        } );
+
     } );
 
 /**

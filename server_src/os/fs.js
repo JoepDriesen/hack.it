@@ -1,6 +1,13 @@
 ( function( e ) {
     
-    var file = require( './file.js' );
+	// File Types
+    e.FT_REGULAR = 0;
+    e.FT_DIRECTORY = 1;
+    e.FT_BLOCK = 2;
+    e.FT_CHARACTER = 3;
+    e.FT_PIPE = 4;
+    e.FT_LINK = 5;
+    e.FT_SOCKET = 6;
     
     e.create = function( dir, filename, mode, filetype ) {
         
@@ -52,7 +59,7 @@
                     mtime: 0,
                     ctime: 0,
                     
-                    filetype: file.FT_DIRECTORY,
+                    filetype: e.FT_DIRECTORY,
                     
                 },
                 name: null,
@@ -96,10 +103,29 @@
         return dir.dentry.children[filename].inode;
         
     };
+
+    e.lookup_path = function( filesystem, abs_path_components ) {
+
+        var cur_inode = e.root_directory( filesystem );
+
+        for ( var i in abs_path_components ) {
+
+            var path_component = abs_path_components[i];
+
+            cur_inode = e.lookup( cur_inode, path_component );
+
+            if ( !cur_inode )
+                throw new Error( "No such file or directory" );
+
+        }
+
+        return cur_inode;
+
+    };
     
     e.mkdir = function( dir, filename, mode ) {
         
-        return e.create( dir, filename, mode, file.FT_DIRECTORY );
+        return e.create( dir, filename, mode, e.FT_DIRECTORY );
         
     };
     

@@ -96,9 +96,6 @@
     
     e.interface_up = function( iface ) {
 
-        if ( !kernel.is_on( iface.system ) )
-            throw new Error( "The system is not turned on." );
-
         if ( !iface.network )
             throw new Error( "Interface is not attached to any network." );
 
@@ -108,17 +105,11 @@
 
     e.interface_down = function( iface ) {
         
-        if ( !kernel.is_on( iface.system ) )
-            throw new Error( "The system is not turned on." );
-
         iface.is_up = false;
         
     };
 
     e.is_up = function( iface ) {
-
-        if ( !kernel.is_on( iface.system ) )
-            throw new Error( "The system is not turned on." );
 
         return iface.is_up;
 

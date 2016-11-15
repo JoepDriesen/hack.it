@@ -1,6 +1,8 @@
 ( function( e ) {
 
-    var internet = require( './internet.js' );
+    var internet = require( './internet.js' ),
+        fs = require( './../fs.js' ),
+        file = require( './../file.js' );
 
 
 
@@ -24,9 +26,20 @@
         if ( !listen_sock || listen_sock.protocol != protocol )
             throw new Error( "Connection refused." );
 
-        var sock = {};
+        var connecting_sock_fd = file._create_file_descriptor( fs.FT_SOCKET ),
+            listening_sock_fd = file._create_file_descriptor( fs.FT_SOCKET );
 
-        return sock;
+        connecting_sock_fd.on( 'data_write', function( d ) {
+            listening_sock_fd.emit( 'data_read', d );
+        } );
+        listening_sock_fd.on( 'data_write', function( d ) {
+            connecting_sock_fd.emit( 'data_read', d );
+        } );
+
+        if ( listen_sock.accept_callback )
+            listen_sock.accept_callback( listening_sock_fd );
+
+        return connecting_sock_fd;
 
     };
 
@@ -48,7 +61,7 @@
 
     };
 
-    e.listen = function( system, bind_ip_address, port, protocol ) {
+    e.listen = function( system, bind_ip_address, port, protocol, accept_callback ) {
 
         if ( bind_ip_address === null )
             bind_ip_address = '0.0.0.0';
@@ -68,6 +81,8 @@
         var listen_socket = {
 
             protocol: protocol,
+
+            accept_callback: accept_callback,
 
         };
         

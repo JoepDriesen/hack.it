@@ -1,31 +1,35 @@
 describe( "Process Management", function() {
 
-    var kernel = require( './kernel.js' ),
-        process = require( './process.js' );
+    var kernel_mock = require( './kernel.js' ),
+        process = require( './process.js' ),
+        EventEmitter = require( 'events' );
+
+    beforeEach( function() {
+
+        this.system = {};
+        this.program = {
+            EVENTS: new EventEmitter(),
+        };
+
+        this.is_installed_mock = spyOn( kernel_mock, 'is_installed' ).and.returnValue( this.program );
+
+    } );
 
     describe( "start_process", function() {
 
-        beforeEach( function() {
-
-            this.system = {};
-            this.program = {};
-
-        } );
-
-        it( "should throw an error if the system is not on", function() {
-
-
-
-
-        } );
-
         it( "should throw an error if the program is not installed on the system", function() {
+
+            this.is_installed_mock.and.returnValue( false );
+
+            expect( function() {
+                process.start_process( this.system, 'testname' );
+            }.bind( this ) ).toThrowError( "Program is not installed: testname" );
 
         } );
 
         it( "should add a new process to the process list and return this process", function() {
 
-            var proc = process.start_process( this.system, this.program );
+            var proc = process.start_process( this.system, 'test' );
 
             expect( process.process_list( this.system ) ).toContain( proc );
 
@@ -33,12 +37,25 @@ describe( "Process Management", function() {
 
         it( "should give each process an always increasing pid number", function() {
 
-            var p1 = process.start_process( this.system, this.program );
-            var p2 = process.start_process( this.system, this.program );
+            var p1 = process.start_process( this.system, 'test' );
+            var p2 = process.start_process( this.system, 'test' );
 
             expect( process.pid( p1 ) ).toBeLessThan( process.pid( p2 ) );
 
         } );
+
+        it( "should emit a startup event to the programs", function() {
+
+            var called_proc;
+            this.program.EVENTS.on( 'start', function( process ) {
+                called_proc = process;
+            } );
+
+            var p = process.start_process( this.system, 'test' );
+
+            expect( called_proc ).toEqual( p );
+
+        } );         
 
     } );
 
@@ -46,14 +63,7 @@ describe( "Process Management", function() {
 
         beforeEach( function() {
 
-            this.system = {};
-            this.program = {};
-
-            this.proc = process.start_process( this.system, this.program );
-
-        } );
-
-        it( "should throw an error if the system is not on", function() {
+            this.proc = process.start_process( this.system, 'test' );
 
         } );
 
@@ -79,16 +89,26 @@ describe( "Process Management", function() {
 
         } );
 
+        it( "should emit a stop event to the programs", function() {
+
+            var called_proc;
+            this.program.EVENTS.on( 'stop', function( process ) {
+                called_proc = process;
+            } );
+
+            var p = process.stop_process( this.system, process.pid( this.proc ) );
+
+            expect( called_proc ).toEqual( p );
+
+        } );
+
     } );
 
     describe( "is_running", function() {
 
         beforeEach( function() {
 
-            this.system = {};
-            this.program = {};
-
-            this.proc = process.start_process( this.system, this.program );
+            this.proc = process.start_process( this.system, 'test' );
 
         } );
 

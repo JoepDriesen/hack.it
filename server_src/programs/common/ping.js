@@ -1,18 +1,22 @@
 ( function( e ) {
 
-    var linux = require( '../../os/linux.js' ),
-        net = require( '../../os/network.js' ),
-        ip = require( 'ip' );
+    var kernel = require( '../../os/kernel.js' ),
+        file = require( '../../os/file.js' ),
+        proc = require( '../../os/process.js' ),
+        internet = require( '../../os/network/internet.js' ),
+        ip = require( 'ip' ),
+        EventEmitter = require( 'events' );
 
     e.CMD = 'ping';
+    e.EVENTS = new EventEmitter();
 
-    e.on_startup = function( system, proc, args, exit_callback ) {
+    e.EVENTS.on( 'start', function( process, args ) {
 
         if ( args.length <= 1 ) {
             
-            proc.outf.write( "Usage: ping <target_ip>\n" );
-            linux.quit( system, proc.pid, exit_callback );
+            file.write( proc.outf( process), "Usage: ping <target_ip>\n" );
 
+            proc.stop_process( proc.system( process ), proc.pid( process ) );
             return 1;
 
         }
@@ -22,8 +26,8 @@
         if ( !ip.isV4Format( target ) ) {
 
             proc.outf.write( "Not a valid ip address: " + target + '\n' );
-            linux.quit( system, proc.pid, exit_callback );
 
+            proc.stop_process( proc.system( process ), proc.pid( process ) );
             return 1;
 
         }
@@ -32,20 +36,18 @@
         
         try {
             
-            conn = net.ip_connect( Object.keys( system.network_interfaces ).map( function( iname ) {
-                return system.network_interfaces[iname];
-            } ).sort( function( iface ) { return iface.name; } ), target );
-            
+           var route = internet.ip_routing( proc.system( process ), target );
+
         } catch ( err ) {
             
-            proc.outf.write( "connect: " + err.message + '\n' );
-            linux.quit( system, proc.pid, exit_callback );
+            file.write( proc.outf( process ), "connect: " + err.message + '\n' );
             
+            proc.stop_process( proc.system( process ), proc.pid( process ) );
             return 1;
             
         }
 
-        proc.outf.write( 'PING ' + target + ' 56(84) bytes of data.\n' );
+        file.write( proc.outf( process ), "PING " + target + " 56(84) bytes of data.\n" );
 
         var pings = 3,
             count = 0,
@@ -56,11 +58,11 @@
                     
                     var lat = conn.latency();
 
-                    proc.outf.write( '64 bytes from ' + target + ': time=' + lat.toFixed( 1 ) + ' ms\n' );
+                    file.write( proc.outf( process ), "64 bytes from " + target + ': time=' + lat.toFixed( 1 ) + ' ms\n' );
                     success++;
                     
                 } else
-                    proc.outf.write( 'From ' + target + ' Destination Host Unreachable\n' );
+                    file.write( proc.outf( process ), "From " + target + " Destination Host Unreachable\n" );
                 count++;
 
                 if ( count >= pings ) {
@@ -69,15 +71,15 @@
                     
                     rate = ( 100 * ( count - success ) / count ).toFixed( 0 );
                     
-                    proc.outf.write( '--- ' + target + ' ping statistics ---\n' );
-                    proc.outf.write( count + ' packets transmitted, ' + success + ' received, ' + rate + '% packet loss\n' );
+                    file.write( proc.outf( process ), "--- " + target + ' ping statistics ---\n' );
+                    file.write( proc.outf( process ), count + " packets transmitted, " + success + ' received, ' + rate + '% packet loss\n' );
 
-                    linux.quit( system, proc.pid, exit_callback );
+                    proc.stop_process( proc.system( process ), proc.pid( process ) );
 
                 }
 
             }, 1000 );
 
-    };
+    } );
 
 }( module.exports ) );

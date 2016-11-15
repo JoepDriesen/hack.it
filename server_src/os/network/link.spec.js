@@ -8,8 +8,6 @@ describe( "Network Link Layer:", function() {
         this.system = {};
         this.network = link.create_network();
 
-        this.system_is_on_spy = spyOn( kernel, 'is_on' ).and.returnValue( true );
-
     } );
 
     describe( "__generate_physical_address", function() {
@@ -132,16 +130,6 @@ describe( "Network Link Layer:", function() {
             
         } );
 
-        it( "should throw an error if the system is not on", function() {
-
-            this.system_is_on_spy.and.returnValue( false );
-
-            expect( function() {
-                link.interface_up( this.iface );
-            }.bind( this ) ).toThrowError( "The system is not turned on." )
-
-        } );
-        
         it( "should throw an error if the interface is not attached to a network", function() {
             
             link.dettach( this.iface );
@@ -169,17 +157,6 @@ describe( "Network Link Layer:", function() {
             link.attach( this.iface, this.network );
             link.interface_up( this.iface );
             
-        } );
-
-
-        it( "should throw an error if the system is not on", function() {
-
-            this.system_is_on_spy.and.returnValue( false );
-
-            expect( function() {
-                link.interface_down( this.iface );
-            }.bind( this ) ).toThrowError( "The system is not turned on." )
-
         } );
 
         it( "should remove the configuration information of the interface", function() {
