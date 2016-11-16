@@ -32,7 +32,7 @@
 
         }
 
-        var conn;
+        var ip_route;
         
         try {
             
@@ -54,9 +54,11 @@
             success = 0,
             interval = setInterval( function() {
                 
-                if ( conn ) {
+                if ( ip_route ) {
+
+
                     
-                    var lat = conn.latency();
+                    var lat = ip_route.latency();
 
                     file.write( proc.outf( process ), "64 bytes from " + target + ': time=' + lat.toFixed( 1 ) + ' ms\n' );
                     success++;

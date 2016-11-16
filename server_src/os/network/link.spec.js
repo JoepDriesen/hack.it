@@ -68,6 +68,14 @@ describe( "Network Link Layer:", function() {
 
         } );
 
+        it( "should use the given physical address if any", function() {
+
+            var i = link.add_interface( this.system, null, 'FF:FF:FF:FF:FF:FF' );
+
+            expect( link.physical_address( i ) ).toEqual( 'FF:FF:FF:FF:FF:FF' );
+
+        } );
+
     } );
     
     describe( "attach", function() {

@@ -6,7 +6,7 @@
    
 
   
-    e.add_interface = function( system, iface_name ) {
+    e.add_interface = function( system, iface_name, physical_address ) {
 
         if ( !system.network_interfaces )
             system.network_interfaces = {};
@@ -22,10 +22,13 @@
         } else if ( system.network_interfaces[iface_name] )
             throw new Error( "Interface already exists: " + iface_name );
 
+        if ( !physical_address )
+            physical_address = e.__generate_physical_address();
+
         var iface = {
 
             name: iface_name,
-            physical_address: e.__generate_physical_address(),
+            physical_address: physical_address,
 
             system: system,
 

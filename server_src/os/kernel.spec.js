@@ -14,7 +14,13 @@ describe( "Kernel functions", function() {
 
         beforeEach( function() {
 
-            this.system = kernel.create_system();
+            this.system = kernel.create_system( "testsystem" );
+
+        } );
+
+        it( "should have the assigned hostname", function() {
+
+            expect( kernel.hostname( this.system ) ).toEqual( "testsystem" );
 
         } );
 

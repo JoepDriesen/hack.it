@@ -17,11 +17,17 @@
             PWD: '/',
         } );
 
-        e.print_prompt( proc.outf( process ) );
+        e.print_prompt( process );
 
         file.read( proc.inf( process ), e.read_command( process ) );
         
     } );
+
+    e.get_var = function( process, var_name ) {
+
+        return proc.get_process_data( process, 'ENVIRONMENT_VARIABLES' )[var_name];
+
+    };
 
     e.read_command = function( process ) {
 
@@ -32,7 +38,7 @@
             if ( !proc.is_running( proc.system( process ), proc.pid( process ) ) || proc.blocked( process ) )
                 return;
                 
-            e.print_prompt( proc.outf( process ) );
+            e.print_prompt( process );
             file.read( proc.inf( process ), read_command );
 
         };
@@ -79,7 +85,7 @@
                     proc.unblock( process );
     
                     file.read( proc.inf( process ), e.read_command( process ) );
-                    e.print_prompt( proc.outf( process ) );
+                    e.print_prompt( process );
     
                 };
                 program.EVENTS.on( 'stop', stop_listener );
@@ -115,12 +121,17 @@
     
     };
     
-    e.print_prompt = function( outf ) {
+    e.print_prompt = function( process ) {
     
-        file.write( outf, '$ ' );
+        file.write( proc.outf( process ), '[root@' + kernel.hostname( proc.system( process ) ) + ':' + e.get_var( process, 'PWD' ) + ']$ ' );
     
     };
 
+    e.set_var = function( process, var_name, var_value ) {
+
+        proc.get_process_data( process, 'ENVIRONMENT_VARIABLES' )[var_name] = var_value;
+
+    };
     
     
     
@@ -141,6 +152,20 @@
 
             }
 
+            if ( !path.startsWith( '/' ) ) {
+
+                abs_path = e.get_var( process, 'PWD' );
+                   
+                if ( !abs_path.endsWith( '/' ) )
+                   abs_path += '/';
+                       
+                path = abs_path + path;
+
+            }
+
+            if ( !path.endsWith( '/' ) )
+                path += '/';
+
             var path_parts = path.split( '/' ),
                 filesystem = fs.filesystem( proc.system( process ), path_parts[0] ),
                 inode;
@@ -160,19 +185,12 @@
 
             } catch ( e ) {
 
-                file.write( proc.outf( process ), "cd: " + e.message + "\n" );
+                file.write( proc.outf( process ), "cd: " + path + ': ' + e.message + "\n" );
                 return 1;
 
             }
 
-            if ( fs.filetype( inode ) != fs.FT_DIRECTORY ) {
-
-                proc.outf.write( "cd: " + path + ": Not a directory\n" );
-                return 1;
-
-            }
-
-            proc.env_vars.PWD = path;
+            e.set_var( process, 'PWD', path.substring( 0, path.length - 1 ) );
             return 0;
 
         },
@@ -192,7 +210,7 @@
                 abs_path = args[1];
                 
             else
-                abs_path = proc.get_process_data( process, 'ENVIRONMENT_VARIABLES' ).PWD;
+                abs_path = e.get_var( process, 'PWD' );
 
             if ( abs_path.endsWith( '/' ) )
                 abs_path = abs_path.substring( 0, abs_path.length - 1 );
@@ -304,7 +322,7 @@
 
         pwd: function( process, args ) {
 
-            file.write( proc.outf( process ), proc.get_process_data( process, 'ENVIRONMENT_VARIABLES' ).PWD + '\n' );
+            file.write( proc.outf( process ), e.get_var( process, 'PWD' ) + '\n' );
 
         },
             

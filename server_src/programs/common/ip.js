@@ -29,6 +29,8 @@
 
             }
 
+            i++;
+
         }
 
         proc.stop_process( proc.system( process ), proc.pid( process ) );

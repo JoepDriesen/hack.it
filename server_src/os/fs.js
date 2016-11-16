@@ -112,6 +112,15 @@
 
             var path_component = abs_path_components[i];
 
+            if ( path_component == '' && i >= ( abs_path_components.length - 1 ) ) {
+
+                if ( e.filetype( cur_inode ) != e.FT_DIRECTORY )
+                    throw new Error( "Not a directory" );
+
+                break;
+
+            }
+
             cur_inode = e.lookup( cur_inode, path_component );
 
             if ( !cur_inode )

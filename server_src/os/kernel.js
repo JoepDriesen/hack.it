@@ -1,12 +1,20 @@
 ( function( e ) {
 
-    e.create_system = function() {
+    e.create_system = function( hostname ) {
 
         return {
+
+            hostname: hostname,
 
             installed_programs: [],
 
         };
+
+    };
+
+    e.hostname = function( system ) {
+
+        return system.hostname;
 
     };
 
