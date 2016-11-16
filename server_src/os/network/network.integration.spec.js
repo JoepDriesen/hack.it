@@ -1,6 +1,7 @@
 describe( "Network integration tests:", function() {
 
     var kernel = require( './../kernel.js' ),
+        fs = require( './../fs.js' ),
         file = require( './../file.js' ),
         link = require( './link.js' ),
         internet = require( './internet.js' ),
@@ -9,6 +10,8 @@ describe( "Network integration tests:", function() {
     it( "should be able to simulate a real network connection", function() {
 
         var sys1 = kernel.create_system(),
+            fs1 = fs.create_filesystem();
+            fs.mount( sys1, fs1, '' );
             iface1_1 = link.add_interface( sys1 ),
 
             net1 = link.create_network();
@@ -17,6 +20,8 @@ describe( "Network integration tests:", function() {
         link.interface_up( iface1_1 );
 
         var sys2 = kernel.create_system(),
+            fs2 = fs.create_filesystem();
+            fs.mount( sys2, fs2, '' );
             iface2_1 = link.add_interface( sys2 ),
             iface2_2 = link.add_interface( sys2 ),
 
@@ -29,6 +34,8 @@ describe( "Network integration tests:", function() {
         link.interface_up( iface2_2 );
 
         var sys3 = kernel.create_system(),
+            fs3 = fs.create_filesystem();
+            fs.mount( sys3, fs3, '' );
             iface3_1 = link.add_interface( sys3 );
 
         link.attach( iface3_1, net2 );

@@ -1,5 +1,5 @@
 describe( "The linux shell program", function() {
-/**
+    
     var shell = require( './shell.js' );
 
     describe( "parse_command", function() {
@@ -23,7 +23,21 @@ describe( "The linux shell program", function() {
         } );
 
     } );
-
+    
+    describe( "get_var", function() {
+        
+        it( "should store and retrieve environment variables", function() {
+            
+            var p = {};
+            
+            shell.set_var( p, 'test', 1 );
+            
+            expect( shell.get_var( p, 'test' ) ).toEqual( 1 );
+            
+        } );
+        
+    } );
+/**
     describe( "on_command_input", function() {
 
         beforeEach( function() {
@@ -76,24 +90,12 @@ describe( "The linux shell program", function() {
             
             spyOn( prog, 'on_startup' );
 
-            shell.on_command_input( sys, this.proc, "test 1 2" );
+            shell.on_command_input( this.proc, "test 1 2" );
 
             expect( prog.on_startup ).toHaveBeenCalled();
 
         } );
 
     } );
-    
-    
-    
-    describe( "Builtin commands", function() {
-        
-        describe( "cd", function() {
-            
-            
-            
-        } );
-        
-    } )
-*/
+**/
 } );

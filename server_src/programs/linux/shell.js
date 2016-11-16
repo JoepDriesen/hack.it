@@ -1,9 +1,6 @@
 ( function( e ) {
 
-    var kernel = require( '../../os/kernel.js' ),
-        fs = require( '../../os/fs.js' ),
-        file = require( '../../os/file.js' ),
-        proc = require( '../../os/process.js' ),
+    var syscalls = require( '../../os/syscalls.js' ),
         EventEmitter = require( 'events' );
 
 

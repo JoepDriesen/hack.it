@@ -14,7 +14,13 @@ describe( "Kernel functions", function() {
 
         beforeEach( function() {
 
-            this.system = kernel.create_system( "testsystem" );
+            this.system = kernel.create_system( 'testos', "testsystem" );
+
+        } );
+
+        it( "should have the given os", function() {
+
+            expect( kernel.os( this.system ) ).toEqual( 'testos' );
 
         } );
 

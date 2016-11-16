@@ -15,7 +15,7 @@ var kernel      = require( global.server_dir + '/os/kernel.js' ),
     
     mainloop    = require( 'mainloop.js' ); 
 
-var system = kernel.create_system( 'testbox' ),
+var system = kernel.create_system( kernel.OS_LINUX, 'testbox' ),
     filesystem = fs.create_filesystem();
 
 fs.mount( system, filesystem, '' );
@@ -36,7 +36,7 @@ link.attach( int1_2, net );
 link.interface_up( int1_2 );
 internet.add_address( int1_2, '192.168.0.1/24' );
 
-var system2 = kernel.create_system( 'hackbox' ),
+var system2 = kernel.create_system( kernel.OS_LINUX, 'hackbox' ),
     filesystem = fs.create_filesystem();
 
 fs.mount( system2, filesystem, '' );

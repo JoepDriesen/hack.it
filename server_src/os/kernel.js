@@ -1,9 +1,10 @@
 ( function( e ) {
 
-    e.create_system = function( hostname ) {
+    e.create_system = function( os, hostname ) {
 
         return {
 
+            os: os,
             hostname: hostname,
 
             installed_programs: [],
@@ -42,6 +43,12 @@
 
         return system.installed_programs[program_or_cmd];
 
+    };
+    
+    e.os = function( system ) {
+        
+        return system.os;
+        
     };
 
     e.uninstall = function( system, program ) {
