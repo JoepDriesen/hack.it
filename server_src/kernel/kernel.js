@@ -1,8 +1,13 @@
 ( function( e ) {
 
+    var uuid = require( 'uuid' ),
+        world_globals = require( '../world_globals.js' );
+
     e.create_system = function( os, hostname ) {
 
-        return {
+        var sys = {
+
+            uuid: uuid(),
 
             os: os,
             hostname: hostname,
@@ -10,6 +15,10 @@
             installed_programs: [],
 
         };
+
+        world_globals.register_system( sys.uuid, sys );
+
+        return sys;
 
     };
 

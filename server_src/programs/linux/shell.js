@@ -1,6 +1,7 @@
 ( function( e ) {
 
-    var syscalls = require( '../../os/syscalls.js' ),
+    var syscalls = require( '../../user/syscalls.js' ),
+        proc = require( '../../user/process.js' ),
         EventEmitter = require( 'events' );
 
 
@@ -21,6 +22,9 @@
     } );
 
     e.get_var = function( process, var_name ) {
+
+        if ( !proc.get_process_data( process, 'ENVIRONMENT_VARIABLES' ) )
+            return undefined;
 
         return proc.get_process_data( process, 'ENVIRONMENT_VARIABLES' )[var_name];
 
@@ -119,12 +123,16 @@
     };
     
     e.print_prompt = function( process ) {
-    
-        file.write( proc.outf( process ), '[root@' + kernel.hostname( proc.system( process ) ) + ':' + e.get_var( process, 'PWD' ) + ']$ ' );
+
+        syscalls.write( proc.outf( process ),
+            '[root@' + syscalls.gethostname( process ) + ':' + syscalls.getcwd() + ']$ ' );
     
     };
 
     e.set_var = function( process, var_name, var_value ) {
+
+        if ( !proc.get_process_data( process, 'ENVIRONMENT_VARIABLES' ) )
+            proc.set_process_data( process, 'ENVIRONMENT_VARIABLES', {} );
 
         proc.get_process_data( process, 'ENVIRONMENT_VARIABLES' )[var_name] = var_value;
 

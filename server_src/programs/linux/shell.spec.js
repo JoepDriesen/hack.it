@@ -1,6 +1,8 @@
 describe( "The linux shell program", function() {
     
-    var shell = require( './shell.js' );
+    var shell = require( './shell.js' ),
+        proc = require( '../../user/process.js' ),
+        syscalls = require( '../../user/syscalls.js' );
 
     describe( "parse_command", function() {
 
@@ -37,6 +39,27 @@ describe( "The linux shell program", function() {
         } );
         
     } );
+
+    describe( "print_prompt", function() {
+
+        it( "should write the prompt to the outfile of the process", function() {
+
+            var process = {},
+                outf = {},
+                write_spy = spyOn( syscalls, 'write' );
+
+            spyOn( proc, 'outf' ).and.returnValue( outf );
+            spyOn( syscalls, 'gethostname' ).and.returnValue( 'testhost' );
+            spyOn( syscalls, 'getcwd' ).and.returnValue( '/test' );
+
+            shell.print_prompt( process );
+
+            expect( write_spy ).toHaveBeenCalledWith( process, '[root@testhost:/test]$ ' );
+
+        } );
+
+    } );
+
 /**
     describe( "on_command_input", function() {
 

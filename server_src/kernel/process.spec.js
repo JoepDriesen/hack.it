@@ -1,9 +1,9 @@
-describe( "Process Management", function() {
+describe( "Kernelspace Process Management", function() {
 
     var kernel_mock = require( './kernel.js' ),
         process = require( './process.js' ),
         EventEmitter = require( 'events' );
-
+/**
     beforeEach( function() {
 
         this.system = {};
@@ -127,5 +127,5 @@ describe( "Process Management", function() {
         } );
 
     } );
-
+*/
 } );

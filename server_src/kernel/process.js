@@ -1,8 +1,34 @@
 ( function( e ) {
 
-    var kernel = require( './kernel.js' ),
-        file = require( './file.js' );
+    var world_globals = require( '../world_globals.js' );
 
+
+
+    e.gid = function( process ) {
+
+        return process.gid;
+
+    };
+
+    e.pid = function( process ) {
+
+        return process.pid;
+
+    };
+
+    e.system = function( process ) {
+
+        return process.system;
+
+    };
+
+    e.uid = function( process ) {
+
+        return process.uid;
+
+    };
+
+    /**
     e.block = function( process ) {
 
         process.blocked = true;
@@ -184,5 +210,5 @@
         process.blocked = false;
 
     };
-
+*/
 }( module.exports ) );

@@ -1,4 +1,8 @@
 ( function( e ) {
+
+    var world_globals = require( '../world_globals.js' ),
+        kernel = require( '../kernel/kernel.js' ),
+        proc = require( '../kernel/process.js' );
     
     // COMMUNICATION
     
@@ -327,6 +331,8 @@
      * http://man7.org/linux/man-pages/man2/sethostname.2.html
      */
     e.gethostname = function( process ) {
+
+        return kernel.hostname( proc.system( process ) );
         
     };
     e.sethostname = function( process, name ) {
@@ -419,6 +425,8 @@
      * http://man7.org/linux/man-pages/man2/setgid.2.html
      */
     e.getgid = function( process ) {
+
+        return proc.gid( process );
         
     };
     e.setgid = function( process, gid ) {
@@ -452,6 +460,8 @@
      * man7.org/linux/man-pages/man2/getpid.2.html
      */
     e.getpid = function( process ) {
+
+        return proc.pid( process );
         
     };
     
@@ -468,6 +478,8 @@
      * http://man7.org/linux/man-pages/man2/geteuid.2.html
      */
     e.getuid = function( process ) {
+
+        return proc.uid( process );
         
     };
     e.setuid = function( process, uid ) {
@@ -505,5 +517,22 @@
     e.vfork = function( process ) {
         
     };
+
+    for ( var key in e ) {
+
+        var int_key = '__' + key;
+
+        e[int_key] = e[key];
+
+        e[key] = function( int_key ) {
+            return function() {
+
+                return e[int_key]( world_globals.current_process() );
+
+            };
+
+        }( int_key );
+
+    }
     
 }( module.exports ) )

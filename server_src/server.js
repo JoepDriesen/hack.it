@@ -2,15 +2,14 @@
 
 global.server_dir = __dirname;
 
-var kernel      = require( global.server_dir + '/os/kernel.js' ),
-    fs          = require( global.server_dir + '/os/fs.js' ),
-    proc        = require( global.server_dir + '/os/process.js' ),
+var kernel      = require( global.server_dir + '/kernel/kernel.js' ),
+    fs          = require( global.server_dir + '/kernel/fs.js' ),
+    proc        = require( global.server_dir + '/kernel/process.js' ),
 
-    link        = require( global.server_dir + '/os/network/link.js' ),
-    internet    = require( global.server_dir + '/os/network/internet.js' ),
+    link        = require( global.server_dir + '/kernel/network/link.js' ),
+    internet    = require( global.server_dir + '/kernel/network/internet.js' ),
 
     shell       = require( global.server_dir + '/programs/linux/shell.js' ),
-    ip          = require( global.server_dir + '/programs/common/ip.js' ),
     ping          = require( global.server_dir + '/programs/common/ping.js' ),
     
     mainloop    = require( 'mainloop.js' ); 
