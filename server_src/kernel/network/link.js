@@ -5,42 +5,13 @@
    
 
   
-    e._system_link = function( system ) {
-
-        switch ( kernel.os( system ) ) {
-                
-            case kernel.OS_LINUX:
-                return linux_link;
-                
-            default:
-                throw new Error( "Unknown OS" );
-                
-        }
-        
-    };
-    
-    e._iface_link = function( iface ) {
-        
-        return e._system_link( e.system( iface ) );
-        
-    };
-    
-    e.add_interface = function( system, iface_name, physical_address ) {
-        
-        var iface = e._system_link( system ).add_interface( system, iface_name, physical_address );
-        iface.system = system;
-        
-        return iface;
-
-    };
-
     // TODO: Spoofed MAC address can hijack any connection on attach
     e.attach = function( iface, network ) {
 
-        if ( e._iface_link( iface ).network( iface ) )
+        if ( iface.network )
             throw new Error( "Interface is already attached to network." );
         
-        e._iface_link( iface ).network( iface, network );
+        iface.network = network;
 
         network.hosts[iface.physical_address] = iface;
         
@@ -58,48 +29,47 @@
 
     };
 
-    e.dettach = function( iface, network ) {
+    e.dettach = function( iface ) {
         
-        if ( !network )
-            e._iface_link( iface ).network( iface, network );
+        if ( !iface.network )
+            return false;
         
-        if ( network )
-            delete network.hosts[iface.physical_address];
+        delete iface.network.hosts[iface.physical_address];
          
-        e._iface_link( iface ).network( iface, null );
+        iface.network = null;
         
     };
     
     e.interface_up = function( iface ) {
 
-        if ( !e._iface_link( iface ).network( iface ) )
+        if ( !iface.network )
             throw new Error( "Interface is not attached to any network." );
 
-        e._iface_link( iface ).is_up( iface, true );
+        iface.is_up = true;
         
     };
 
     e.interface_down = function( iface ) {
         
-        e._iface_link( iface ).is_up( iface, false );
+        iface.is_up = false;
         
     };
+    
+    e.is_up = function( nic, is_up ) {
 
-    e.is_up = function( iface ) {
-
-        return e._iface_link( iface ).is_up( iface );
-
-    };
-
-    e.name = function( iface ) {
-
-        return e._iface_link( iface ).name( iface );
+        return iface.is_up;
 
     };
 
-    e.network = function( iface ) {
+    e.name = function( nic, name ) {
 
-        return e._iface_link( iface ).network( iface );
+        return iface.name;
+
+    };
+
+    e.network = function( nic, network ) {
+
+        return nic.network;
 
     }
 
@@ -130,9 +100,9 @@
 
     };
 
-    e.physical_address = function( iface ) {
+    e.physical_address = function( nic, physical_address ) {
 
-        return e._iface_link( iface ).physical_address( iface );
+        return nic.physical_address;
 
     };
 

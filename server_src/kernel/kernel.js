@@ -1,71 +1,90 @@
 ( function( e ) {
-
-    var uuid = require( 'uuid' ),
-        world_globals = require( '../world_globals.js' );
-
-    e.create_system = function( os, hostname ) {
-
-        var sys = {
-
-            uuid: uuid(),
-
+    
+    var fs = require( './fs.js' ),
+        sys = require( '../hardware/system.js' );
+    
+    
+    e.boot = function( system, root_partition, os ) {
+        
+        var kernel = {
+            
+            system: system,
             os: os,
-            hostname: hostname,
-
-            installed_programs: [],
-
+            
+            hostname: 'localhost',
+            installed_programs: {},
+             
         };
+        
+        fs.mount( kernel, root_partition, '' );
+        
+        system.kernel = kernel;
+        
+        return kernel;
+        
+    };
 
-        world_globals.register_system( sys.uuid, sys );
+    e.hostname = function( kernel ) {
 
-        return sys;
+        return kernel.hostname;
 
     };
 
-    e.hostname = function( system ) {
+    e.install = function( kernel, program ) {
 
-        return system.hostname;
-
-    };
-
-    e.install = function( system, program ) {
-
-        if ( system.installed_programs[program.CMD] || !program )
+        if ( kernel.installed_programs[program.CMD] || !program )
             return false;
 
-        system.installed_programs[program.CMD] = program;
+        kernel.installed_programs[program.CMD] = program;
 
         return true;
 
     };
 
-    e.installed_programs = function( system ) {
+    e.installed_programs = function( kernel ) {
 
-        return Object.keys( system.installed_programs ).sort();
+        return Object.keys( kernel.installed_programs ).sort();
 
     };
 
-    e.is_installed = function( system, program_or_cmd ) {
+    e.is_installed = function( kernel, program_or_cmd ) {
 
         if ( program_or_cmd.CMD )
-            return system.installed_programs[program_or_cmd.CMD];
+            return kernel.installed_programs[program_or_cmd.CMD];
 
-        return system.installed_programs[program_or_cmd];
+        return kernel.installed_programs[program_or_cmd];
 
     };
     
-    e.os = function( system ) {
+    e.is_booted = function( system ) {
         
-        return system.os;
+        return system.kernel;
+        
+    };
+    
+    e.os = function( kernel ) {
+        
+        return kernel.os;
+        
+    };
+    
+    e.shutdown = function( system ) {
+        
+        if ( !system.kernel )
+            return false;
+        
+        delete system.kernel;
+        
+        return true;
         
     };
 
-    e.uninstall = function( system, program ) {
+    e.uninstall = function( kernel, program ) {
 
-        if ( !system.installed_programs[program.CMD] )
+        if ( !kernel.installed_programs[program.CMD] )
             return false;
 
-        delete system.installed_programs[program.CMD];
+        delete kernel.installed_programs[program.CMD];
 
         return true;
 

@@ -9,6 +9,40 @@
     e.FT_LINK = 5;
     e.FT_SOCKET = 6;
     
+    
+    e._get_filesystem = function( hdd_device ) {
+        
+        if ( hdd_device.fs )
+            return hdd_device.fs;
+        
+        var fs = {
+
+            children: {},
+            inode: {
+
+                mode: 509,
+                uid: 0,
+                gid: 0,
+
+                atime: 0,
+                mtime: 0,
+                ctime: 0,
+
+                filetype: e.FT_DIRECTORY,
+
+            },
+            name: null,
+            parent: null,
+
+        };
+        fs.inode.dentry = fs;
+        
+        hdd_device.fs = fs;
+        
+        return fs;
+        
+    };
+    
     e.create = function( dir, filename, mode, filetype ) {
         
         if ( dir.dentry.children[filename] )
@@ -39,47 +73,6 @@
         dir.dentry.children[filename] = new_dentry;
         
         return new_dentry.inode;
-        
-    };
-    
-    e.create_filesystem = function() {
-        
-        var fs = {
-            
-            root: {
-            
-                children: {},
-                inode: {
-                    
-                    mode: 509,
-                    uid: 0,
-                    gid: 0,
-                    
-                    atime: 0,
-                    mtime: 0,
-                    ctime: 0,
-                    
-                    filetype: e.FT_DIRECTORY,
-                    
-                },
-                name: null,
-                parent: null,
-            
-            }
-            
-        };
-        fs.root.inode.dentry = fs.root;
-        
-        return fs;
-        
-    };
-    
-    e.filesystem = function( system, mount_point ) {
-        
-        if ( !system.fs || !system.fs[mount_point] )
-            return null;
-        
-        return system.fs[mount_point];
         
     };
     
@@ -144,15 +137,15 @@
         
     };
     
-    e.mount = function( system, filesystem, mount_point ) {
+    e.mount = function( kernel, hdd_device, mount_point ) {
         
-        if ( system.fs && system.fs[mount_point])
+        if ( kernel.mounts && kernel.mounts[mount_point] )
             throw new Error( "Filesystem present." );
         
-        if ( !system.fs )
-            system.fs = {};
+        if ( !kernel.mounts )
+            kernel.mounts = {};
         
-        system.fs[mount_point] = filesystem;
+        kernel.mounts[mount_point] = hdd_device;
         
     };
     
