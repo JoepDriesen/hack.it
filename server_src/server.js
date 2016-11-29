@@ -5,8 +5,6 @@ global.server_dir = __dirname;
 var dev         = require( global.server_dir + '/hardware/device.js' ),
     sys         = require( global.server_dir + '/hardware/system.js' ),
     kern        = require( global.server_dir + '/kernel/kernel.js' ),
-    fs          = require( global.server_dir + '/kernel/fs.js' ),
-    proc        = require( global.server_dir + '/kernel/process.js' ),
 
     link        = require( global.server_dir + '/kernel/network/link.js' ),
     internet    = require( global.server_dir + '/kernel/network/internet.js' ),
@@ -21,8 +19,8 @@ function system_config( num, os, hdd_size, nic_count ) {
     
     var root_partition = dev.DEV_HDD.create( hdd_size );
     sys.attach_device( system, dev.DEV_HDD, root_partition );
-        
-    for ( var i = 0; i < nic_count; i++ )
+
+    for ( var i = 0; i < nic_count; i++ )    
         sys.attach_device( system, dev.DEV_NIC, dev.DEV_NIC.create( system.uuid + i ) );
     
     var kernel = kern.boot( system, root_partition, os );
@@ -62,7 +60,4 @@ internet.add_address( int2_2, '192.168.0.2/24' );
 mainloop.start();
 
 console.log( ':: Server\t:: Server startup complete.' );
-
-proc.start_process( kernel, shell, [ shell.CMD ] );
-
 

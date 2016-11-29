@@ -1,12 +1,35 @@
 ( function( e ) {
 
-    var world_globals = require( '../world_globals.js' );
+    var syscalls = require( '../kernel/syscalls.js' );
 
 
+    e.error_fd = function( process ) {
+
+        return process.error_fd;
+
+    };
 
     e.gid = function( process ) {
 
         return process.gid;
+
+    };
+
+    e.input_fd = function( process ) {
+
+        return process.input_fd;
+
+    };
+
+    e.kernel = function( kernel ) {
+
+        return process.system;
+
+    };
+
+    e.output_fd = function( process ) {
+
+        return process.output_fd;
 
     };
 
@@ -16,9 +39,42 @@
 
     };
 
-    e.system = function( process ) {
+    e.start_process = function( kernel, cmd_parts, input_fd, output_fd, error_fd ) {
 
-        return process.system;
+        if ( !kernel.process_list ) {
+
+            kernel.process_list = [];
+            kernel.next_pid = 1;
+
+        }
+
+        if ( !input_fd )
+            input_fd = file.STDIN;
+        if ( !output_fd )
+            output_fd = file.STDOUT;
+        if ( !error_fd )
+            error_fd = file.STDERR;
+        
+        var prog = kern.os_functions( kernel ).get_program( kernel, cmd_parts[0] );
+
+        var p = {
+
+            pid: system.next_pid,
+            program: program,
+            kernel: kernel,
+
+            input_fd: input_fd,
+            output_fd: output_fd,
+            error_fd: error_fd,
+
+        };
+
+        kernel.process_list.push( p );
+        kernel.next_pid++;
+
+        prog.EVENTS.emit( 'start', userspace_syscalls( p ) );
+
+        return p;
 
     };
 
@@ -47,21 +103,9 @@
 
     };
 
-    e.errf = function( process ) {
-
-        return process.errf;
-
-    };
-
     e.get_process_data = function( process, key ) {
 
         return process.process_data[key];
-
-    };
-
-    e.inf = function( process ) {
-
-        return process.inf;
 
     };
 
@@ -89,12 +133,6 @@
             return p;
 
         return false;
-
-    };
-
-    e.outf = function( process ) {
-
-        return process.outf;
 
     };
 

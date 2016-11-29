@@ -1,7 +1,11 @@
 ( function( e ) {
     
     var fs = require( './fs.js' ),
+        proc = require( './process.js' ),
         sys = require( '../hardware/system.js' );
+
+    var os_imports = {};
+    os_imports[sys.OS_LINUX] = require( './linux/kernel.js' );
     
     
     e.boot = function( system, root_partition, os ) {
@@ -17,8 +21,10 @@
         };
         
         fs.mount( kernel, root_partition, '' );
-        
+
         system.kernel = kernel;
+
+        os_imports[os].boot( kernel, e );
         
         return kernel;
         
@@ -67,6 +73,12 @@
         return kernel.os;
         
     };
+
+    e.os_functions = function( kernel ) {
+
+        return os_imports[kernel.os];
+
+    };
     
     e.shutdown = function( system ) {
         
@@ -77,6 +89,12 @@
         
         return true;
         
+    };
+
+    e.system = function( kernel ) {
+
+        return kernel.system;
+
     };
 
     e.uninstall = function( kernel, program ) {

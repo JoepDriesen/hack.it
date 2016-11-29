@@ -22,16 +22,17 @@
 
     };
     
-    e.create = function( seed ) {
-        
-        var mac = e.__generate_physical_address( seed );
+    e.create = function( seed, mac_address ) {
+       
+        if ( !mac_address ) 
+            mac_address = e.__generate_physical_address( seed );
         
         return {
             
             type: 'nic',
             
-            identifier: mac,
-            mac: mac,
+            identifier: mac_address,
+            mac: mac_address,
             
         };
         

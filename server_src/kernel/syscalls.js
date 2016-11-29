@@ -518,21 +518,26 @@
         
     };
 
-    for ( var key in e ) {
 
-        var int_key = '__' + key;
+    /*
+     * returns a function that can be used for syscalls bound
+     * to the given process
+     */
+    e.userspace_syscalls = function( process ) {
 
-        e[int_key] = e[key];
+        return function() {
 
-        e[key] = function( int_key ) {
-            return function() {
+            if ( arguments.length <= 0 )
+                throw new SyscallError( 'None' );
 
-                return e[int_key]( world_globals.current_process() );
+            var syscall_name = arguments[0];
 
-            };
+            arguments[0] = process;
 
-        }( int_key );
+            e[syscall_name].apply( null, arguments )
 
-    }
+        };
+
+    };
     
 }( module.exports ) )
